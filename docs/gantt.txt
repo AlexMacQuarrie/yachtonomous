@@ -1,0 +1,38 @@
+gantt
+    title Yachtonomous Project Timeline
+    dateFormat  YYYY-MM-DD
+    tickInterval 1week
+    weekday monday
+    todayMarker off
+    section Boat
+    Boat Research              :2024-09-30, 21d
+    Boat Design                :14d
+    Test Environment Design    :14d
+    Boat Building              :21d
+    Floatation Tests           :7d
+    Boat Completed             :milestone, 0d
+    Test Environment Building  :2025-01-06, 21d
+    Test Environment Completed :milestone, 0d
+    section Hardware
+    Part Research         :2024-09-30, 14d
+    Part Selection        :14d
+    Sensor Testing        :14d
+    Actuator Testing      :14d
+    Prototyping           :21d
+    Prototyping Completed :milestone, 0d
+    Boat PCB Design       :2025-01-06, 14d
+    Mark PCB Design       :7d
+    Hardware Completed    :milestone, 0d
+    section Software
+    SW Architecture      :2024-09-30, 21d
+    Pathfinding Algo Dev :21d
+    Control Algo Dev     :35d
+    Algorithms Completed :milestone, 0d
+    HW Bring Up          :2025-01-06, 7d
+    Software Calibration :14d
+    Software Completed   :milestone, 0d
+    section Integration
+    Boat & HW Integration :7d
+    HW & SW Integration   :7d
+    Final Testing         :21d
+    Project Completed     :milestone, 0d
