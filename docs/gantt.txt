@@ -1,3 +1,5 @@
+%% Gantt chart used in proposal report
+
 gantt
     title Yachtonomous Project Timeline
     dateFormat  YYYY-MM-DD

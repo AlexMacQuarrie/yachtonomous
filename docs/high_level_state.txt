@@ -1,0 +1,11 @@
+%% High-level state diagram used in proposal report
+
+stateDiagram-v2
+    [*] --> Localization: Start Program
+    Localization --> Navigation: Compute Path
+    Navigation --> Sail: Start Sailing
+    Sail --> Localization: Update Position
+    Localization --> Destination: At Destination
+    Destination --> [*]: End Program
+    Localization --> Error: Invalid Position/Error
+    Error --> [*]: End Program
