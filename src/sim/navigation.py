@@ -5,12 +5,6 @@ import matplotlib.pyplot as plt
 from tools.angle import Angle
 from tools.plotting import PlotCtrl
 
-"""
-TODO
-- Always need X and Y limit (for high critical angles)
-- Initial upwind vector should ensure it's always pointing in bounds to avoid tacking immediately
-- Consider switching upwind vector to whichever is closest to boat vector instead of whichever is closes to direct path
-"""
 
 class NavigationError(Exception):
     pass
@@ -21,16 +15,25 @@ def is_upwind(path_angle:Angle, abs_wind_angle:Angle, crit_angle_wind:Angle) -> 
         return -crit_angle_wind.log < round(anglediff.log, 6) < crit_angle_wind.log
 
 
-def plot_course(boat_pos:np.ndarray,
-                dest_pos:np.ndarray,
-                wind_angle:Angle,
-                boat_angle:Angle,
-                crit_angle_wind:Angle=Angle.exp(45.0, deg=True),
-                min_window:float=1.0,
-                point_dist:float=0.05,
-                dest_thresh:float=0.1,
-                max_length:int=300,
-                plot_ctrl:PlotCtrl=PlotCtrl.ON_FAIL
+def is_out_of_bounds(current_pos:np.ndarray, boat_vec:np.ndarray,
+                     x_lim_l:float, x_lim_h:float, 
+                     y_lim_l:float, y_lim_h:float) -> bool:
+    return (current_pos[0] < x_lim_l and boat_vec[0] < 0
+         or current_pos[0] > x_lim_h and boat_vec[0] > 0
+         or current_pos[1] < y_lim_l and boat_vec[1] < 0
+         or current_pos[1] > y_lim_h and boat_vec[1] > 0)
+
+
+def plot_course(boat_pos        :np.ndarray,
+                dest_pos        :np.ndarray,
+                wind_angle      :Angle,
+                boat_angle      :Angle,
+                crit_angle_wind :Angle    = Angle.exp(45.0, deg=True),
+                min_window      :float    = 1.0,
+                point_dist      :float    = 0.05,
+                dest_thresh     :float    = 0.1,
+                max_length      :int      = 300,
+                plot_ctrl       :PlotCtrl = PlotCtrl.ON_FAIL
                 ) -> np.ndarray:
     # Check crit angle (relative to wind direction, which is relative to boat direction)
     if not (math.radians(0) < crit_angle_wind.log < math.radians(90)):
@@ -53,21 +56,19 @@ def plot_course(boat_pos:np.ndarray,
     crit_angle     = abs_wind_angle - crit_angle_wind
     left_crit      = crit_angle + crit_angle_wind + crit_angle_wind
 
-    # Determine if boat is sailing generally more towards y-axis vs x-axis
-    up_or_down = Angle.exp(45, deg=True).log <= abs(path_angle.log) <= Angle.exp(135, deg=True).log
-    limit_idx = 0 if up_or_down else 1
+    # Get x and y limits
+    x_lim_l = min(boat_pos[0], dest_pos[0])
+    x_lim_h = max(boat_pos[0], dest_pos[0])
+    y_lim_l = min(boat_pos[1], dest_pos[1])
+    y_lim_h = max(boat_pos[1], dest_pos[1])
 
-    # Get x limits of course (between boat and dest)
-    low_limit  = min(boat_pos[limit_idx], dest_pos[limit_idx])
-    high_limit = max(boat_pos[limit_idx], dest_pos[limit_idx])
-    window     = high_limit - low_limit
+    mid_x = (x_lim_l+x_lim_h)/2.0
+    x_lim_l = min(x_lim_l, mid_x - min_window/2.0)
+    x_lim_h = max(x_lim_h, mid_x + min_window/2.0)
 
-    # If x gap between boat and dest is too small, 
-    # move limits to +/- x_min/2, centered about middle of boat and dest
-    if window < min_window:
-        mid         = (low_limit+high_limit)/2.0
-        low_limit  = mid - min_window/2.0
-        high_limit = mid + min_window/2.0
+    mid_y = (y_lim_l+y_lim_h)/2.0
+    y_lim_l = min(y_lim_l, mid_y - min_window/2.0)
+    y_lim_h = max(y_lim_h, mid_y + min_window/2.0)
 
     # Assume plotting doesn't fail
     failed = False
@@ -84,17 +85,25 @@ def plot_course(boat_pos:np.ndarray,
         # transpose == inverse, so can tack back using the transpose
         tack_angle = crit_angle_wind + crit_angle_wind
         tack_matrix = np.array(
-            ((math.cos(tack_angle.log), -math.sin(tack_angle.log)), 
-             (math.sin(tack_angle.log),  math.cos(tack_angle.log)))
+            ((tack_angle.cos, -tack_angle.sin), 
+             (tack_angle.sin,  tack_angle.cos))
         )
         
         # Get initial upwind path vector
-        # Selects the tack that takes it closer to the mark
+        # Selects the tack that is closer to the boat's initial heading
         boat_vec  = point_dist*np.array((left_crit.cos , left_crit.sin ))
         other_vec = point_dist*np.array((crit_angle.cos, crit_angle.sin))
-        if np.dot(path_vector, other_vec) > np.dot(path_vector, boat_vec):
-            boat_vec    = other_vec
-            tack_matrix = tack_matrix.transpose()
+        boat_angle_vec = np.array((boat_angle.cos, boat_angle.sin))
+        if np.dot(boat_angle_vec, other_vec) > np.dot(boat_angle_vec, boat_vec):
+            boat_vec, other_vec = other_vec, boat_vec
+            tack_matrix         = tack_matrix.transpose()
+
+        # If the vector we are using will immediately take boat out of bounds,
+        # then use the other vector
+        first_point = boat_pos + boat_vec
+        if is_out_of_bounds(first_point, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
+            boat_vec, other_vec = other_vec, boat_vec
+            tack_matrix         = tack_matrix.transpose()
 
         # Set initial upwind conditions
         past_layline = False
@@ -119,8 +128,7 @@ def plot_course(boat_pos:np.ndarray,
                     boat_vec     = boat_vec @ tack_matrix
                     tack_matrix  = tack_matrix.transpose()
                 # Going out of set bounds, tack
-                elif (current_pos[limit_idx] < low_limit  and boat_vec[limit_idx] < 0
-                   or current_pos[limit_idx] > high_limit and boat_vec[limit_idx] > 0):
+                elif is_out_of_bounds(current_pos, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
                     boat_vec    = boat_vec @ tack_matrix
                     tack_matrix = tack_matrix.transpose()
 
@@ -144,51 +152,44 @@ def plot_course(boat_pos:np.ndarray,
     or (not failed and plot_ctrl == PlotCtrl.ON_FAIL)):
         if failed: raise err
         return course
-
-    # Get X & Y limits
-    lowest  = min(boat_pos[1], dest_pos[1])
-    highest = max(boat_pos[1], dest_pos[1])
-    x_lim_left  = min(boat_pos[0], dest_pos[0])
-    x_lim_right = max(boat_pos[0], dest_pos[0])
+    
+    # Set some tunable plot sizing multipliers
+    # All of these will be multiplied by the plot size
+    layline_len = 0.5
+    arrow_width = 0.02
+    boat_length = 0.1
+    wind_length = 0.2
 
     # Get plot sizes
-    y_len = highest - lowest
-    x_len = x_lim_right - x_lim_left
-    plot_size = max(x_len, y_len)
-    prop_dist = 0.5*plot_size
+    plot_size = max(y_lim_h-y_lim_l, x_lim_h-x_lim_l)
 
     # Get values to center the course in the plot
-    mid_x    = (x_lim_left+x_lim_right)/2.0
-    leftmost = mid_x - plot_size/2.0
-    mid_y      = (highest+lowest)/2.0
-    bottommost = mid_y - plot_size/2.0
-    x_ticks = np.linspace(leftmost  , leftmost+plot_size  , int(plot_size+1))
-    y_ticks = np.linspace(bottommost, bottommost+plot_size, int(plot_size+1))
+    x_ticks = np.linspace(x_lim_l, x_lim_l+plot_size, int(plot_size+1))
+    y_ticks = np.linspace(y_lim_l, y_lim_l+plot_size, int(plot_size+1))
 
     # Get layline points
-    r_ll_point = dest_pos + prop_dist*np.array((-crit_angle.cos, -crit_angle.sin))
-    l_ll_point = dest_pos + prop_dist*np.array((-left_crit.cos, -left_crit.sin))
+    r_ll_point = dest_pos + (layline_len*plot_size)*np.array((-crit_angle.cos, -crit_angle.sin))
+    l_ll_point = dest_pos + (layline_len*plot_size)*np.array((-left_crit.cos , -left_crit.sin ))
 
     # Plot boat and destination
     plt.plot(boat_pos[0], boat_pos[1], 'go')
     plt.plot(dest_pos[0], dest_pos[1], 'ro')
     # Plot course
-    plt.scatter(course[:, 0], course[:, 1], s=10, c='b')
+    plt.scatter(course[:, 0], course[:, 1], s=int(5*plot_size), c='b')
     # Plot x or y limits
-    if limit_idx == 0:
-        plt.plot((low_limit , low_limit  ), (lowest    , highest   ), 'k')
-        plt.plot((high_limit, high_limit ), (lowest    , highest   ), 'k')
-    else:
-        plt.plot((x_lim_left, x_lim_right), (low_limit , low_limit ), 'k')
-        plt.plot((x_lim_left, x_lim_right), (high_limit, high_limit), 'k')
+    plt.plot((x_lim_l, x_lim_l), (y_lim_l, y_lim_h), 'k')
+    plt.plot((x_lim_h, x_lim_h), (y_lim_l, y_lim_h), 'k')
+    plt.plot((x_lim_l, x_lim_h), (y_lim_l, y_lim_l), 'k')
+    plt.plot((x_lim_l, x_lim_h), (y_lim_h, y_lim_h), 'k')
     # Plot laylines
     plt.plot((dest_pos[0], r_ll_point[0]), (dest_pos[1], r_ll_point[1]), 'm')
     plt.plot((dest_pos[0], l_ll_point[0]), (dest_pos[1], l_ll_point[1]), 'm')
     # Add vectors for boat and wind angle
-    boat_arrow = (prop_dist/5.0)*np.array((math.cos(boat_angle.log), math.sin(boat_angle.log)))
-    plt.arrow(boat_pos[0], boat_pos[1], boat_arrow[0], boat_arrow[1], head_width=0.05, color='g')
-    wind_arrow = (prop_dist/2.5)*np.array((-math.cos(abs_wind_angle.log), -math.sin(abs_wind_angle.log)))
-    plt.arrow(dest_pos[0], dest_pos[1], wind_arrow[0], wind_arrow[1], head_width=0.05, color='b')
+    arrow_width = arrow_width*plot_size
+    boat_arrow = (boat_length*plot_size)*np.array((boat_angle.cos, boat_angle.sin))
+    plt.arrow(boat_pos[0], boat_pos[1], boat_arrow[0], boat_arrow[1], head_width=arrow_width, color='g')
+    wind_arrow = (wind_length*plot_size)*np.array((-abs_wind_angle.cos, -abs_wind_angle.sin))
+    plt.arrow(dest_pos[0], dest_pos[1], wind_arrow[0], wind_arrow[1], head_width=arrow_width, color='b')
     # Resize to square plot with equivalent axis to preserve geometry
     # Content will be centered in the plot
     plt.xticks(x_ticks)
