@@ -1,0 +1,44 @@
+{
+    "sim": {
+        "sim_time"  : 100.0,
+        "T"         : 0.05,
+        "skip_time" : 0.0
+    },
+
+    "control": {
+        "mpc_en"          : true,
+        "max_pred_horz"   : 50,
+        "state_weights"   : [10.0, 10.0, 5.0, 1.0],
+        "input_wieghts"   : [5.0, 1.0],
+        "poles"           : [-0.5, -1.0, -1.5, -2.0]
+    },
+
+    "boat": {
+        "length"              : 0.1,
+        "width"               : 0.1,
+        "crit_sail_angle_deg" : 20,
+        "crit_wind_angle_deg" : 45
+    },
+
+    "test": {
+        "pool_size"   : 2.0,
+        "dest_pos"    : [1.75, 1.75],
+        "wind_angle"  : 1.96349540849,
+        "exp_parms"   : [5.0, 2.0],
+        "border_pad"  : 0,
+        "dest_thresh" : 1.0
+    },
+
+    "initial": {
+        "start_pos"   : [0.25, 0.25, 0.78539816339, 0.0],
+        "init_inputs" : [0.1, 0.0]
+    },
+
+    "noise": {
+        "start_noise"  : 0.1,
+        "sensor_noise" : [0.1, 0.1],
+        "input_noise"  : [0.1, 0.1],
+        "wind_noise"   : 0.1,
+        "state_noise"  : [0.5, 0.5, 1.57079632679, 0.1]
+    }
+}

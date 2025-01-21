@@ -2,8 +2,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from tools.angle import Angle
-from tools.plotting import PlotCtrl
+from tools import Angle, PlotCtrl
 
 
 class NavigationError(Exception):
@@ -28,8 +27,8 @@ def plot_course(boat_pos        :np.ndarray,
                 dest_pos        :np.ndarray,
                 wind_angle      :Angle,
                 boat_angle      :Angle,
-                crit_angle_wind :Angle    = Angle.exp(45.0, deg=True),
-                min_window      :float    = 1.0,
+                crit_angle_wind :Angle,
+                border_pad      :float    = 0.0,
                 point_dist      :float    = 0.05,
                 dest_thresh     :float    = 0.1,
                 max_length      :int      = 300,
@@ -57,18 +56,26 @@ def plot_course(boat_pos        :np.ndarray,
     left_crit      = crit_angle + crit_angle_wind + crit_angle_wind
 
     # Get x and y limits
-    x_lim_l = min(boat_pos[0], dest_pos[0])
-    x_lim_h = max(boat_pos[0], dest_pos[0])
-    y_lim_l = min(boat_pos[1], dest_pos[1])
-    y_lim_h = max(boat_pos[1], dest_pos[1])
+    # Assumes boat is left and below destination
+    x_lim_l = boat_pos[0] - border_pad
+    x_lim_h = dest_pos[0] + border_pad
+    y_lim_l = boat_pos[1] - border_pad
+    y_lim_h = dest_pos[1] + border_pad
 
-    mid_x = (x_lim_l+x_lim_h)/2.0
-    x_lim_l = min(x_lim_l, mid_x - min_window/2.0)
-    x_lim_h = max(x_lim_h, mid_x + min_window/2.0)
+    # # Get x and y limits
+    # Min window default was 1.0
+    # x_lim_l = min(boat_pos[0], dest_pos[0])
+    # x_lim_h = max(boat_pos[0], dest_pos[0])
+    # y_lim_l = min(boat_pos[1], dest_pos[1])
+    # y_lim_h = max(boat_pos[1], dest_pos[1])
 
-    mid_y = (y_lim_l+y_lim_h)/2.0
-    y_lim_l = min(y_lim_l, mid_y - min_window/2.0)
-    y_lim_h = max(y_lim_h, mid_y + min_window/2.0)
+    # mid_x = (x_lim_l+x_lim_h)/2.0
+    # x_lim_l = min(x_lim_l, mid_x - min_window/2.0)
+    # x_lim_h = max(x_lim_h, mid_x + min_window/2.0)
+
+    # mid_y = (y_lim_l+y_lim_h)/2.0
+    # y_lim_l = min(y_lim_l, mid_y - min_window/2.0)
+    # y_lim_h = max(y_lim_h, mid_y + min_window/2.0)
 
     # Assume plotting doesn't fail
     failed = False
@@ -159,6 +166,7 @@ def plot_course(boat_pos        :np.ndarray,
     arrow_width = 0.02
     boat_length = 0.1
     wind_length = 0.2
+    dot_size    = 5
 
     # Get plot sizes
     plot_size = max(y_lim_h-y_lim_l, x_lim_h-x_lim_l)
@@ -174,8 +182,9 @@ def plot_course(boat_pos        :np.ndarray,
     # Plot boat and destination
     plt.plot(boat_pos[0], boat_pos[1], 'go')
     plt.plot(dest_pos[0], dest_pos[1], 'ro')
-    # Plot course
-    plt.scatter(course[:, 0], course[:, 1], s=int(5*plot_size), c='b')
+    # Plot course (points and line)
+    plt.scatter(course[:, 0], course[:, 1], s=int(dot_size*plot_size), c='b')
+    plt.plot(course[:, 0], course[:, 1], c='b')
     # Plot x or y limits
     plt.plot((x_lim_l, x_lim_l), (y_lim_l, y_lim_h), 'k')
     plt.plot((x_lim_h, x_lim_h), (y_lim_l, y_lim_h), 'k')

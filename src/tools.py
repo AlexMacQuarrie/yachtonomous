@@ -1,5 +1,12 @@
-# Module for helper classes and function for handling angle/orientation
 import math
+from enum import Enum
+
+
+class PlotCtrl(Enum):
+    ALWAYS  = 0,
+    NEVER   = 1,
+    ON_PASS = 2,
+    ON_FAIL = 3
 
 
 class Angle:
