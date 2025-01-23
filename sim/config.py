@@ -1,10 +1,14 @@
 import json
+import math
 from typing import Tuple
 
 
 class settings:
     def __init__(self, data:dict):
         for key, value in data.items():
+            if len(key) > 3 and key[-4:] == '_deg':
+                key   = key[:-4]
+                value = math.radians(value)
             setattr(self, key, value)
 
     def __getattr__(self, name):

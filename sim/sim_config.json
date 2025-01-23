@@ -1,16 +1,16 @@
 {
     "sim": {
-        "sim_time"  : 100.0,
         "T"         : 0.05,
         "skip_time" : 0.0
     },
 
     "control": {
-        "mpc_en"          : true,
-        "max_pred_horz"   : 50,
-        "state_weights"   : [10.0, 10.0, 5.0, 1.0],
-        "input_wieghts"   : [5.0, 1.0],
-        "poles"           : [-0.5, -1.0, -1.5, -2.0]
+        "mpc_en"           : true,
+        "max_pred_horz"    : 50,
+        "state_weights"    : [10.0, 10.0, 5.0, 1.0],
+        "input_wieghts"    : [5.0, 1.0],
+        "poles"            : [-0.5, -1.0, -1.5, -2.0],
+        "input_saturation" : [1.0, 1.570796]
     },
 
     "boat": {
@@ -21,12 +21,13 @@
     },
 
     "test": {
-        "pool_size"   : 2.0,
-        "dest_pos"    : [1.75, 1.75],
-        "wind_angle"  : 1.96349540849,
-        "exp_parms"   : [5.0, 2.0],
-        "border_pad"  : 0,
-        "dest_thresh" : 1.0
+        "pool_size"           : 2.0,
+        "dest_pos"            : [1.75, 1.75],
+        "abs_wind_angle_deg"  : 60,
+        "exp_parms"           : [5.0, 2.0],
+        "border_pad"          : 0,
+        "point_dist"          : 0.005,
+        "dest_thresh"         : 1.0
     },
 
     "initial": {

@@ -9,12 +9,12 @@ class NavigationError(Exception):
     pass
 
 
-def is_upwind(path_angle:Angle, abs_wind_angle:Angle, crit_angle_wind:Angle) -> bool:
+def _is_upwind(path_angle:Angle, abs_wind_angle:Angle, crit_angle_wind:Angle) -> bool:
         anglediff = path_angle - abs_wind_angle
         return -crit_angle_wind.log < round(anglediff.log, 6) < crit_angle_wind.log
 
 
-def is_out_of_bounds(current_pos:np.ndarray, boat_vec:np.ndarray,
+def _is_out_of_bounds(current_pos:np.ndarray, boat_vec:np.ndarray,
                      x_lim_l:float, x_lim_h:float, 
                      y_lim_l:float, y_lim_h:float) -> bool:
     return (current_pos[0] < x_lim_l and boat_vec[0] < 0
@@ -89,7 +89,7 @@ def plot_course(boat_pos        :np.ndarray,
     failed = False
     
     # Plot course upwind or directly
-    if not is_upwind(path_angle, abs_wind_angle, crit_angle_wind):
+    if not _is_upwind(path_angle, abs_wind_angle, crit_angle_wind):
         ### Direct trajectory
         num_points = math.ceil(distance/point_dist)
         for i in range(num_points):
@@ -121,7 +121,7 @@ def plot_course(boat_pos        :np.ndarray,
         # If the vector we are using will immediately take boat out of bounds,
         # then use the other vector
         first_point = boat_pos + boat_vec
-        if is_out_of_bounds(first_point, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
+        if _is_out_of_bounds(first_point, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
             boat_vec, other_vec = other_vec, boat_vec
             tack_matrix         = tack_matrix.transpose()
 
@@ -146,12 +146,12 @@ def plot_course(boat_pos        :np.ndarray,
 
             if not past_layline:
                 # Going past layline, tack and sail to destination
-                if not is_upwind(angle_to_dest, abs_wind_angle, crit_angle_wind):
+                if not _is_upwind(angle_to_dest, abs_wind_angle, crit_angle_wind):
                     past_layline = True
                     boat_vec     = boat_vec @ tack_matrix
                     tack_matrix  = tack_matrix.transpose()
                 # Going out of set bounds, tack
-                elif is_out_of_bounds(current_pos, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
+                elif _is_out_of_bounds(current_pos, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
                     boat_vec    = boat_vec @ tack_matrix
                     tack_matrix = tack_matrix.transpose()
 
@@ -179,7 +179,7 @@ def plot_course(boat_pos        :np.ndarray,
     or (    failed and plot_ctrl == PlotCtrl.ON_PASS) 
     or (not failed and plot_ctrl == PlotCtrl.ON_FAIL)):
         if failed: raise err
-        return course, state
+        return state.T
     
     # Set some tunable plot sizing multipliers
     # All of these will be multiplied by the plot size
@@ -225,7 +225,8 @@ def plot_course(boat_pos        :np.ndarray,
     plt.xticks(x_ticks)
     plt.yticks(y_ticks)
     plt.gca().set_aspect('equal')
+    plt.savefig("outputs/navigation_drawing.pdf")
     plt.show()
 
     if failed: raise err
-    return course, state
+    return state.T

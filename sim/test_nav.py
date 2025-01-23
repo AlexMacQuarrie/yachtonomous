@@ -1,11 +1,11 @@
-# Unit tests for navigation simulation
+import argparse
 import numpy as np
 from time import time
 from tools import Angle, PlotCtrl
 from navigation import NavigationError, plot_course
 
 
-def test_navigation_individual() -> None:
+def _test_navigation_individual() -> None:
     boat = np.array((0.25, 0.25))
     dest = np.array((1.75, 1.75))
 
@@ -15,10 +15,11 @@ def test_navigation_individual() -> None:
 
     padding = 0.05
 
-    plot_course(boat, dest, wind_angle, boat_angle, crit_angle, border_pad=padding, plot_ctrl=PlotCtrl.ALWAYS)
+    plot_course(boat, dest, wind_angle, boat_angle, crit_angle, border_pad=padding, 
+                plot_ctrl=PlotCtrl.ALWAYS)
 
 
-def test_navigation() -> None:
+def _test_navigation() -> None:
     # Create permutations
     crits       = [Angle.exp(i, deg=True) for i in range(30, 70, 10)]
     winds       = [Angle.exp(i, deg=True) for i in range(-180, 180, 20)]
@@ -47,3 +48,17 @@ def test_navigation() -> None:
                             print('FAILURE!!!')
                             raise NavigationError(f'Nav error for Boat={boat}, Dest={dest}, Wind={wind}, Crit={crit}, BoatAngle={boat_angle} -> {err}')         
     print(f'All tests passed in {(time()-start_time)/60.0:.2f} minutes')
+
+
+if __name__ == '__main__':
+    # Parse CLI args
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', dest='indiv', default=False, action='store_true', help='Run individual tests')
+    args = parser.parse_args()
+    indiv_en = args.indiv
+
+    # Run tests
+    if args.indiv: 
+        _test_navigation_individual()
+    else:          
+        _test_navigation()
