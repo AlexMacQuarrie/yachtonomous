@@ -1,4 +1,6 @@
+# External
 import numpy as np
+# Internal
 from tools import arr
 
 

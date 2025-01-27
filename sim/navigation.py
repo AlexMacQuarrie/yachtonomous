@@ -1,7 +1,8 @@
-# Module for navigation simulation
+# External
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+# Internal
 from tools import Angle, PlotCtrl
 
 
@@ -70,20 +71,23 @@ def plot_course(boat_pos        :np.ndarray,
         y_lim_l = true_start[1] - border_pad
         y_lim_h = dest_pos[1]   + border_pad
 
-    # # Get x and y limits
-    # Min window default was 1.0
-    # x_lim_l = min(boat_pos[0], dest_pos[0])
-    # x_lim_h = max(boat_pos[0], dest_pos[0])
-    # y_lim_l = min(boat_pos[1], dest_pos[1])
-    # y_lim_h = max(boat_pos[1], dest_pos[1])
+    '''
+        Old way of setting limits. More general, but not neccessary
+    
+        # Get x and y limits (min window default was 1.0)
+        x_lim_l = min(boat_pos[0], dest_pos[0])
+        x_lim_h = max(boat_pos[0], dest_pos[0])
+        y_lim_l = min(boat_pos[1], dest_pos[1])
+        y_lim_h = max(boat_pos[1], dest_pos[1])
 
-    # mid_x = (x_lim_l+x_lim_h)/2.0
-    # x_lim_l = min(x_lim_l, mid_x - min_window/2.0)
-    # x_lim_h = max(x_lim_h, mid_x + min_window/2.0)
+        mid_x = (x_lim_l+x_lim_h)/2.0
+        x_lim_l = min(x_lim_l, mid_x - min_window/2.0)
+        x_lim_h = max(x_lim_h, mid_x + min_window/2.0)
 
-    # mid_y = (y_lim_l+y_lim_h)/2.0
-    # y_lim_l = min(y_lim_l, mid_y - min_window/2.0)
-    # y_lim_h = max(y_lim_h, mid_y + min_window/2.0)
+        mid_y = (y_lim_l+y_lim_h)/2.0
+        y_lim_l = min(y_lim_l, mid_y - min_window/2.0)
+        y_lim_h = max(y_lim_h, mid_y + min_window/2.0)
+    '''
 
     # Assume plotting doesn't fail
     failed = False

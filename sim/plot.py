@@ -1,7 +1,9 @@
+# External
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from scipy.stats import chi2
+# Internal
 from boat import boat
 from tools import arr, wrap_to_pi
 

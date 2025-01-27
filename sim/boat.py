@@ -1,8 +1,10 @@
+# External
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import patches
 from scipy.stats import chi2
+# Internal
 from tools import draw_rectangle, Angle, sec2
 from config import settings
 

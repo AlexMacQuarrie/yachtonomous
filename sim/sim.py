@@ -1,4 +1,6 @@
+# External
 import numpy as np
+# Internal
 from config import parse_config
 from boat import boat, trim_sail
 from control import mpc, fsf
@@ -10,16 +12,22 @@ from tools import Angle, rk_four, PlotCtrl
 
 '''
 TODO
-W3/4 -> Path Following
+W4 -> Path Following
 - Switch from trajectory tracking to path following (or pseudo trajectory tracking)
+    - To select next point, use first point (by index) that has + dot prod between boat vec and boat-to-point vec
+    - Next iter, start search for next point at previous point (initially start at 0)
+    - In case of failure, use next point by index
+    - Use this index on u_d also
+    - This might be problematic near tacking points
 
-W4/5 -> Model Updates
+W5 -> Model Updates
+- Weight exploration tool
 - Dynamic MPC weights (change smoothly or pre-sets near tacking points)
 - Try adding drift from wind to model (i.e. x_dot = -wind_speed*np.cos(rel_wind_ang+x[2]) + u[0]*np.cos(x[2]))
 - Switch to actual sailboat model somehow
 '''
 
-def main() -> None:
+def simulate() -> None:
     # Parse the simulation config
     sim_config, control_config, boat_config, \
     test_config, initial_config, noise_config = parse_config()
@@ -137,4 +145,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    simulate()

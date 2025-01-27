@@ -1,6 +1,8 @@
+# External
 import argparse
 import numpy as np
 from time import time
+# Internal
 from tools import Angle, PlotCtrl
 from navigation import NavigationError, plot_course
 

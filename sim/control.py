@@ -1,5 +1,7 @@
+# External
 import numpy as np
 from scipy import signal
+# Internal
 from boat import boat
 from tools import arr
 from config import settings
