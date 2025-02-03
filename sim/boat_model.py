@@ -5,97 +5,104 @@ import matplotlib.animation as animation
 from matplotlib import patches
 from scipy.stats import chi2
 # Internal
-from tools import draw_rectangle, Angle, sec2
+from tools import Angle, arr, draw_rectangle, sec2
 from config import settings
 
 
 def trim_sail(rel_wind_angle:Angle, crit_angle:Angle) -> Angle:
+    ''' 
+        Trim the sail to half the relative wind angle,
+        but ensure crit_angle < sail_angle < 90 deg
+    '''
     # Since rel_wind_angle is [-180, 180], division is fine
     if rel_wind_angle.log >= 0:
-        sail_angle = Angle.exp(max( crit_angle.log, rel_wind_angle.log/2.0))
+        return Angle.exp(max( crit_angle.log, rel_wind_angle.log/2.0))
     else:
-        sail_angle = Angle.exp(min(-crit_angle.log, rel_wind_angle.log/2.0))
-
-    return sail_angle
+        return Angle.exp(min(-crit_angle.log, rel_wind_angle.log/2.0))
 
 
 class boat:
     def __init__(self, boat_config:settings):
-        self.ell_W = boat_config.length
-        self.ell_T = boat_config.width
+        self.length = boat_config.length
+        self.width = boat_config.width
 
-    def f(self, x, u):
-        """ Kinematic model """
+    def f(self, x:arr, u:arr):
+        ''' Kinematic model '''
         f = np.zeros(4)
-        f[0] = u[0] * np.cos(x[2])
-        f[1] = u[0] * np.sin(x[2])
-        f[2] = -u[0] * 1.0 / self.ell_W * np.tan(x[3])
-        f[3] = u[1]
+        f[0] =  u[0] * np.cos(x[2])
+        f[1] =  u[0] * np.sin(x[2])
+        f[2] = -u[0] * np.tan(x[3])/self.length
+        f[3] =  u[1]
         return f
     
     def A(self, v:float, theta:float, phi:float):
+        ''' Linearization of model w.r.t. state '''
         return v*np.array(
             [
-                [0, 0, -np.sin(theta), 0                    ],
-                [0, 0,  np.cos(theta), 0                    ],
-                [0, 0,  0,             -sec2(phi)/self.ell_W],
-                [0, 0,  0,             0                    ],
+                [0, 0, -np.sin(theta), 0                     ],
+                [0, 0,  np.cos(theta), 0                     ],
+                [0, 0,  0,             -sec2(phi)/self.length],
+                [0, 0,  0,             0                     ],
             ]
         )
 
     def B(self, theta:float, phi:float):
+        ''' Linearization of model w.r.t. inputs '''
         return np.array(
             [
                 [ np.cos(theta),          0],
                 [ np.sin(theta),          0],
-                [-np.tan(phi)/self.ell_W, 0],
+                [-np.tan(phi)/self.length, 0],
                 [ 0,                      1],
             ]
         )
 
     def F(self, T:float, v:float, theta:float, phi:float):
+        ''' Discretization of A via Euler integration '''
         return np.eye(4) + T*self.A(v, theta, phi)
 
     def G(self, T:float, theta:float, phi:float):
+        ''' Discretization of B via Euler integration '''
         return T*self.B(theta, phi)
 
-    def draw(self, x, y, theta, phi):
+    def draw(self, x:float, y:float, theta:float, phi:float):
         # Left and right back wheels
         X_L, Y_L = draw_rectangle(
-            x - 0.5 * self.ell_T * np.sin(theta) - self.ell_W * np.cos(theta),
-            y + 0.5 * self.ell_T * np.cos(theta) - self.ell_W * np.sin(theta),
-            0.5 * self.ell_T,
-            0.25 * self.ell_T,
+            x - 0.5 * self.width * np.sin(theta) - self.length * np.cos(theta),
+            y + 0.5 * self.width * np.cos(theta) - self.length * np.sin(theta),
+            0.5 * self.width,
+            0.25 * self.width,
             theta + phi,
         )
         X_R, Y_R = draw_rectangle(
-            x + 0.5 * self.ell_T * np.sin(theta) - self.ell_W * np.cos(theta),
-            y - 0.5 * self.ell_T * np.cos(theta) - self.ell_W * np.sin(theta),
-            0.5 * self.ell_T,
-            0.25 * self.ell_T,
+            x + 0.5 * self.width * np.sin(theta) - self.length * np.cos(theta),
+            y - 0.5 * self.width * np.cos(theta) - self.length * np.sin(theta),
+            0.5 * self.width,
+            0.25 * self.width,
             theta + phi,
         )
         # Front wheel
         X_F, Y_F = draw_rectangle(
             x,
             y,
-            0.5 * self.ell_T,
-            0.25 * self.ell_T,
+            0.5 * self.width,
+            0.25 * self.width,
             theta,
         )
         # Body
         X_BD, Y_BD = draw_rectangle(
-            x - self.ell_W / 2.0 * np.cos(theta),
-            y - self.ell_W / 2.0 * np.sin(theta),
-            2.0 * self.ell_W,
-            2.0 * self.ell_T,
+            x - self.length / 2.0 * np.cos(theta),
+            y - self.length / 2.0 * np.sin(theta),
+            2.0 * self.length,
+            2.0 * self.width,
             theta,
         )
         # Return the arrays of points
         return X_L, Y_L, X_R, Y_R, X_F, Y_F, X_BD, Y_BD
 
-    def animate(self, x, x_d, x_hat, w, w_hat, s, P_hat, alpha,
-                T, map_size, f_map, dest_pos, save_ani, filename):
+    def animate(self, x:arr, x_d:arr, x_hat:arr, w:arr, w_hat:arr, s:arr, P_hat:arr,
+                alpha:float, T:float, map_size:float, f_map:arr, dest_pos:arr,
+                save_ani:bool, filename:str):
         # Wind Arow Stuff
         radius         = np.sqrt(2.0)*map_size/2.0
         arrow_len      = map_size*0.05
@@ -138,7 +145,7 @@ class boat:
             time_text.set_text("")
             return line, estimated, desired, leftwheel, rightwheel, frontwheel, body, time_text, est_wind_arrow
 
-        def movie(k):
+        def movie(k:int):
             """The function called at each step of the animation."""
             # Draw Estimated Wind Arrow
             est_wind_angle = w_hat[k] + x_hat[2, k]
@@ -189,13 +196,12 @@ class boat:
 
         # Create the animation
         ani = animation.FuncAnimation(
-            fig,
-            movie,
-            np.arange(1, len(x[0, :]), max(1, int(1 / T / 10))),
-            init_func=init,
-            interval=T * 1000,
-            blit=True,
-            repeat=False,
+            fig, movie,
+            np.arange(1, len(x[0, :]), max(1, int(1/T/10))),
+            init_func =init,
+            interval  = T*1000,
+            blit      = True,
+            repeat    = False,
         )
         if save_ani is True:
             ani.save(filename, fps=min(1 / T, 10))

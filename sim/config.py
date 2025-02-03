@@ -4,6 +4,9 @@ import math
 from typing import Tuple
 
 
+__CONFIG_PATH__ = 'sim_config.json'
+
+
 class settings:
     def __init__(self, data:dict):
         for key, value in data.items():
@@ -26,12 +29,7 @@ class settings:
 
 
 def parse_config() -> Tuple[settings]:
-    with open('sim_config.json', 'r') as config_file:
+    with open(__CONFIG_PATH__, 'r') as config_file:
         data = json.load(config_file)
 
-    return (settings(data['sim']),
-            settings(data['control']),
-            settings(data['boat']), 
-            settings(data['test']),
-            settings(data['initial']), 
-            settings(data['noise']))  
+    return (settings(data[category]) for category in data)

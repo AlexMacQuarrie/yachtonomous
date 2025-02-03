@@ -1,8 +1,7 @@
 # External
 import numpy as np
-from scipy import signal
 # Internal
-from boat import boat
+from boat_model import boat
 from tools import arr
 from config import settings
 
@@ -42,16 +41,10 @@ def mpc(vehicle:boat, control_config:settings, T:float,
     # Compute control inputs and take first
     K = np.linalg.inv(M.T @ Q @ M + R) @ M.T @ Q 
     u = K @ (xi_d - L @ x_hat[:, k-1])
-    return _saturate(u[:2], control_config.input_saturation)
 
+    # Saturate inputs if above saturation threshold
+    u = _saturate(u[:2], control_config.input_saturation)
+    # Ensure speed input is not negative
+    u = np.array((max(control_config.min_speed, u[0]), u[1]))
 
-def fsf(vehicle:boat, control_config:settings, 
-        x_d:arr, u_d:arr, x_hat:arr) -> arr:
-    # Compute the gain matrix to place poles of (A-BK) at p
-    A = vehicle.A(u_d[0], x_d[2], x_d[3])
-    B = vehicle.B(x_d[2], x_d[3])
-    p = np.array(control_config.poles)
-    K = signal.place_poles(A, B, p)
-
-    # Compute the controls (v, omega)
-    return _saturate(K.gain_matrix @ (x_d - x_hat) + u_d, control_config.input_saturation)
+    return u

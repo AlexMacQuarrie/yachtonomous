@@ -1,0 +1,30 @@
+%% Gantt chart used in progress report
+
+gantt
+    title Updated Yachtonomous Project Timeline
+    dateFormat  YYYY-MM-DD
+    tickInterval 1week
+    weekday monday
+    todayMarker off
+
+    section Boat
+    3D Printing of Boat         :2025-02-03, 7d
+    Sail & Mast Construction    :7d
+    Test Pool Construction      :7d
+    Boat Completed              :milestone, 0d
+
+    section Hardware
+    Bluetooth Sensor Testing    :2025-02-03, 7d
+    PCB Soldering & Testing     :7d
+    Integration Into Boat       :7d
+    Hardware Completed          :milestone, 0d
+
+    section Software
+    Boat Kinematic Modelling    :2025-02-03, 7d
+    Parameter Exploration       :7d
+    Porting to MicroPython      :7d
+    Software Completed          :milestone, 0d
+
+    section Integration
+    Final Integration & Testing :14d
+    Project Completed           :milestone, 0d

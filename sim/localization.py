@@ -2,7 +2,7 @@
 import numpy as np
 from typing import Tuple
 # Internal
-from boat import boat
+from boat_model import boat
 from sensor import range_sensor, get_distance
 from tools import arr
 
