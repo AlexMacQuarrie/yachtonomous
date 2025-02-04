@@ -7,17 +7,18 @@ from sensor import range_sensor, get_distance
 from tools import arr
 
 
-def ekf(vehicle:boat, exp_parms:list, T:float, q:arr, P:arr, 
+def ekf(sailboat:boat, exp_parms:list, T:float, q:arr, P:arr, 
         u:arr, z:arr, Q:arr, R:arr, f_map:arr) -> Tuple[arr, arr]:
+    ''' Extended Kalman Filter for localization '''
     # Compute the Jacobian matrices (linearize about current estimate)
     num_states = len(q)
-    F = vehicle.F(T, u[0], q[2], q[3])
-    G = vehicle.G(T, q[2], q[3])
+    F = sailboat.F(T, u[0], q[2], q[3])
+    G = sailboat.G(T, q[2], q[3])
 
     # Compute the a priori estimate
     P_new = F @ P @ F.T + G @ Q @ G.T
     P_new = 0.5*(P_new + P_new.T)  # Numerically help the covariance matrix stay symmetric
-    q_new = q + T*vehicle.f(q, u)
+    q_new = q + T*sailboat.f(q, u)
 
     # Linearize measurement model
     # Compute the Jacobian matrices (linearize about current estimate)
@@ -46,7 +47,7 @@ def ekf(vehicle:boat, exp_parms:list, T:float, q:arr, P:arr,
                                                H @ np.linalg.matrix_power(F, j)), 
                                                axis=0)
     if np.linalg.matrix_rank(observability_matrix) < num_states:
-        raise ValueError("System is not observable!")
+        raise ValueError('System is not observable!')
 
     # Compute the Kalman gain
     K = P_new @ H.T @ np.linalg.inv(H @ P_new @ H.T + R)

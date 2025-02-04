@@ -11,13 +11,15 @@ class NavigationError(Exception):
 
 
 def _is_upwind(path_angle:Angle, abs_wind_angle:Angle, crit_angle_wind:Angle) -> bool:
-        anglediff = path_angle - abs_wind_angle
-        return -crit_angle_wind.log < round(anglediff.log, 6) < crit_angle_wind.log
+    ''' Check if boat moving upwind '''
+    anglediff = path_angle - abs_wind_angle
+    return -crit_angle_wind.log < round(anglediff.log, 6) < crit_angle_wind.log
 
 
 def _is_out_of_bounds(current_pos:np.ndarray, boat_vec:np.ndarray,
                      x_lim_l:float, x_lim_h:float, 
                      y_lim_l:float, y_lim_h:float) -> bool:
+    ''' Check if boat is out of bounds '''
     return (current_pos[0] < x_lim_l and boat_vec[0] < 0
          or current_pos[0] > x_lim_h and boat_vec[0] > 0
          or current_pos[1] < y_lim_l and boat_vec[1] < 0
@@ -36,6 +38,7 @@ def plot_course(boat_pos        :np.ndarray,
                 plot_ctrl       :PlotCtrl   = PlotCtrl.ON_FAIL,
                 true_start      :np.ndarray = None
                 ) -> np.ndarray:
+    ''' Plot course from start to destination '''
     # Check crit angle (relative to wind direction, which is relative to boat direction)
     if not (math.radians(0) < crit_angle_wind.log < math.radians(90)):
         raise NavigationError('Crit angle must be in (0, 90)')
@@ -229,7 +232,7 @@ def plot_course(boat_pos        :np.ndarray,
     plt.xticks(x_ticks)
     plt.yticks(y_ticks)
     plt.gca().set_aspect('equal')
-    plt.savefig("outputs/navigation_drawing.pdf")
+    plt.savefig('outputs/navigation_drawing.pdf')
     plt.show()
 
     if failed: raise err

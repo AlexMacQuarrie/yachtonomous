@@ -7,11 +7,13 @@ from config import settings
 
 
 def _saturate(u:arr, sat_limits:list) -> arr:
+    ''' Clamp inputs to within given limits '''
     return np.asarray([max(inp, -lim) if inp < 0 else min(inp, lim) for inp, lim in zip(u, sat_limits)])
 
 
-def mpc(vehicle:boat, control_config:settings, T:float, 
+def mpc(sailboat:boat, control_config:settings, T:float, 
         N:int, k:int, x_d:arr, u_d:arr, x_hat:arr) -> arr:
+    ''' Model Predictive Control for feedback control '''
     # Prediction horizon
     p = min(control_config.max_pred_horz, N-k)
 
@@ -20,7 +22,7 @@ def mpc(vehicle:boat, control_config:settings, T:float,
     R = np.kron(np.eye(p), np.diag(control_config.input_wieghts))
 
     # Empty L & M matrices
-    n, m = 4, 2
+    n, m = sailboat.num_states, sailboat.num_inputs
     L = np.zeros((n*p, n))
     M = np.zeros((n*p, m*p))
     xi_d = np.zeros(n*p)
@@ -28,8 +30,8 @@ def mpc(vehicle:boat, control_config:settings, T:float,
     # Fill L & M
     for i in range(p):
         # Compute the approximate linearization
-        F = vehicle.F(T, u_d[0, k+i-1], x_d[2, k+i-1], x_d[3, k+i-1])
-        G = vehicle.G(T, x_d[2, k+i-1], x_d[3, k+i-1])
+        F = sailboat.F(T, u_d[0, k+i-1], x_d[2, k+i-1], x_d[3, k+i-1])
+        G = sailboat.G(T, x_d[2, k+i-1], x_d[3, k+i-1])
 
         # Compute L and M
         L[n*i:n*i+n, 0:n] = np.linalg.matrix_power(F, i+1)

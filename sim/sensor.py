@@ -10,11 +10,12 @@ class WindSensor:
         if self.use_avg:
             self.abs_wind_est = np.zeros(N)
 
-    def read(self, k:int, rel_wind_angle, x_hat:arr, sigma_wind:float, num_samples:int=5):
+    def read(self, k:int, rel_wind_angle:float, x_hat:arr, sigma_wind:float, num_samples:int=5):
+        ''' Take a wind reading. Uses LPF to smooth results '''
         rel_wind_est = np.mean([rel_wind_angle + sigma_wind*np.random.randn() for _ in range(num_samples)])
 
-        # Use moving average of most recent 5 estimates to reduce noise
-        # Only use this if wind direction is constant
+        # Use moving average of most recent N estimates to reduce noise
+        # Assumes constant absolute wind direction
         if self.use_avg:
             abs_wind_est = rel_wind_est + x_hat[2]
             self.abs_wind_est[k] = abs_wind_est
@@ -24,12 +25,14 @@ class WindSensor:
 
         return rel_wind_est
     
-
-def estimate_initial_wind(rel_wind_angle, sigma_wind:float, num_samples:int=5) -> float:
-    return np.mean([rel_wind_angle + sigma_wind*np.random.randn() for _ in range(num_samples)])
+    @staticmethod
+    def estimate_initial_wind(rel_wind_angle, sigma_wind:float, num_samples:int=5) -> float:
+        ''' Estimate wind angle with average instead of LPF '''
+        return np.mean([rel_wind_angle + sigma_wind*np.random.randn() for _ in range(num_samples)])
     
 
 def range_sensor(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
+    ''' Exponential range sensor function '''
     # Compute the measured range to each feature from the current robot position
     num_features = f_map.shape[1]
     z = np.zeros(num_features)
@@ -42,12 +45,13 @@ def range_sensor(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
 
 
 def rotation_sensor(x:arr, sigma_w:float) -> float:
-    # NOTE: Actual IMU probably needs to integrate?
+    ''' Simulate IMU angle measurement '''
     # Compute vehicle angle with noise
     return x[2] + sigma_w*np.random.randn()
 
 
 def get_measurements(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
+    ''' Get range and rotation measurements '''
     num_features = f_map.shape[1]
     z = np.zeros(num_features+1)
     z[0:num_features] = range_sensor(x, exp_parms, sigma_w[0], f_map)
@@ -56,5 +60,5 @@ def get_measurements(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
 
 
 def get_distance(x:arr, f_map:arr, i:int) -> float:
-    # Compute euclidean distance
+    ''' Compute euclidean distance '''
     return np.sqrt((x[0] - f_map[0, i])**2 + (x[1] - f_map[1, i])**2)

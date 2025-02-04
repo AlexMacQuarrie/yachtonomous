@@ -22,9 +22,12 @@ def trim_sail(rel_wind_angle:Angle, crit_angle:Angle) -> Angle:
 
 
 class boat:
+    ''' Object to model, draw, and animate the boat '''
     def __init__(self, boat_config:settings):
         self.length = boat_config.length
         self.width = boat_config.width
+        self.num_states = 4
+        self.num_inputs = 2
 
     def f(self, x:arr, u:arr):
         ''' Kinematic model '''
@@ -50,10 +53,10 @@ class boat:
         ''' Linearization of model w.r.t. inputs '''
         return np.array(
             [
-                [ np.cos(theta),          0],
-                [ np.sin(theta),          0],
+                [ np.cos(theta),           0],
+                [ np.sin(theta),           0],
                 [-np.tan(phi)/self.length, 0],
-                [ 0,                      1],
+                [ 0,                       1],
             ]
         )
 
@@ -66,6 +69,7 @@ class boat:
         return T*self.B(theta, phi)
 
     def draw(self, x:float, y:float, theta:float, phi:float):
+        ''' Draw the boat using a series of points '''
         # Left and right back wheels
         X_L, Y_L = draw_rectangle(
             x - 0.5 * self.width * np.sin(theta) - self.length * np.cos(theta),
@@ -101,38 +105,39 @@ class boat:
         return X_L, Y_L, X_R, Y_R, X_F, Y_F, X_BD, Y_BD
 
     def animate(self, x:arr, x_d:arr, x_hat:arr, w:arr, w_hat:arr, s:arr, P_hat:arr,
-                alpha:float, T:float, map_size:float, f_map:arr, dest_pos:arr,
+                alpha:float, T:float, map_size:arr, f_map:arr, dest_pos:arr,
                 save_ani:bool, filename:str):
+        ''' Animation of the boat '''
         # Wind Arow Stuff
-        radius         = np.sqrt(2.0)*map_size/2.0
-        arrow_len      = map_size*0.05
+        radius         = np.sqrt(2.0)*np.mean(map_size)/2.0
+        arrow_len      = np.mean(map_size)*0.05
         abs_wind_angle = w[0] + x[2, 0]
         wind_arrow     = arrow_len*np.array((np.cos(abs_wind_angle), np.sin(abs_wind_angle)))
-        wa_base        = radius*np.array((np.cos(abs_wind_angle), np.sin(abs_wind_angle))) + (map_size/2.0,map_size/2.0)
+        wa_base        = radius*np.array((np.cos(abs_wind_angle), np.sin(abs_wind_angle))) + (map_size[0]/2.0,map_size[1]/2.0)
         # Sail Stuff
         fig, ax = plt.subplots()
-        plt.xlabel("x [m]")
-        plt.ylabel("y [m]")
-        plt.axis("equal")
-        ax.plot(f_map[0, :], f_map[1, :], "C4*", label="Feature")
-        plt.plot(dest_pos[0], dest_pos[1], "C3D", label="Destination")
-        plt.plot(x_hat[0, 0], x_hat[1, 0], "C5D", label="Est. Start")
+        plt.xlabel('x [m]')
+        plt.ylabel('y [m]')
+        plt.axis('equal')
+        ax.plot(f_map[0, :], f_map[1, :], 'C4*', label='Feature')
+        plt.plot(dest_pos[0], dest_pos[1], 'C3D', label='Destination')
+        plt.plot(x_hat[0, 0], x_hat[1, 0], 'C5D', label='Est. Start')
         plt.arrow(wa_base[0]+wind_arrow[0], wa_base[1]+wind_arrow[1], -wind_arrow[0], -wind_arrow[1], head_width=0.05, color='b', label='Wind')
-        ax.add_patch(patches.Rectangle((0, 0), map_size, map_size, edgecolor='k', fill=False))
-        (line,) = ax.plot([], [], "C0")
-        (estimated,) = ax.plot([], [], "--C1")
-        (desired,) = ax.plot([], [], "--C2")
-        (leftwheel,) = ax.fill([], [], color="k")
-        (rightwheel,) = ax.fill([], [], color="k")
-        (frontwheel,) = ax.fill([], [], color="k")
-        (body,) = ax.fill([], [], color="C0", alpha=0.5)
+        ax.add_patch(patches.Rectangle((0, 0), map_size[0], map_size[1], edgecolor='k', fill=False))
+        (line,) = ax.plot([], [], 'C0')
+        (estimated,) = ax.plot([], [], '--C1')
+        (desired,) = ax.plot([], [], '--C2')
+        (leftwheel,) = ax.fill([], [], color='k')
+        (rightwheel,) = ax.fill([], [], color='k')
+        (frontwheel,) = ax.fill([], [], color='k')
+        (body,) = ax.fill([], [], color='C0', alpha=0.5)
         est_wind_arrow = ax.arrow([], [], [], [], head_width=0.05, color='C1')
         sail = ax.arrow([], [], [], [], head_width=0, color='k')
-        time_text = ax.text(0.05, 0.9, "", transform=ax.transAxes)
+        time_text = ax.text(0.05, 0.9, '', transform=ax.transAxes)
         s2 = chi2.isf(alpha, 2)
 
         def init():
-            """A function that initializes the animation."""
+            ''' A function that initializes the animation '''
             line.set_data([], [])
             estimated.set_data([], [])
             desired.set_data([], [])
@@ -142,15 +147,15 @@ class boat:
             body.set_xy(np.empty([5, 2]))
             est_wind_arrow.set_data()
             sail.set_data()
-            time_text.set_text("")
+            time_text.set_text('')
             return line, estimated, desired, leftwheel, rightwheel, frontwheel, body, time_text, est_wind_arrow
 
         def movie(k:int):
-            """The function called at each step of the animation."""
+            ''' The function called at each step of the animation '''
             # Draw Estimated Wind Arrow
             est_wind_angle = w_hat[k] + x_hat[2, k]
             est_wind_vec   = arrow_len*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle)))
-            est_wa_base    = radius*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle))) + (map_size/2.0,map_size/2.0)
+            est_wa_base    = radius*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle))) + (map_size[0]/2.0,map_size[1]/2.0)
             est_wind_arrow.set_data(x=est_wa_base[0]+est_wind_vec[0], 
                                     y=est_wa_base[1]+est_wind_vec[1], 
                                     dx=-est_wind_vec[0], dy=-est_wind_vec[1])
@@ -183,10 +188,10 @@ class boat:
                 2 * np.sqrt(s2 * W[j_min]),
                 angle=np.arctan2(V[j_max, 1], V[j_max, 0]) * 180 / np.pi,
                 alpha=0.2,
-                color="C1",
+                color='C1',
             )
             # Add the simulation time
-            time_text.set_text("t = %.1f s" % (k * T))
+            time_text.set_text('t = %.1f s' % (k * T))
             # Set the axis limits 
             ax.set_xbound(lower=-1, upper=3)
             ax.set_ybound(lower=-1, upper=3)

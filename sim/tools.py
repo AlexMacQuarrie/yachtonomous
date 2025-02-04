@@ -9,6 +9,7 @@ class arr(np.ndarray):
 
 
 class PlotCtrl(Enum):
+    ''' Enum for controlling when to plot figures '''
     ALWAYS  = 0,
     NEVER   = 1,
     ON_PASS = 2,
@@ -16,6 +17,7 @@ class PlotCtrl(Enum):
 
 
 class Angle:
+    ''' Object to help handle angle wrap-around '''
     def __init__(self, sin_theta:float, cos_theta:float) -> None:
         self.sin = sin_theta
         self.cos = cos_theta
@@ -50,23 +52,17 @@ class Angle:
 
 
 def wrap_to_pi(angle:float):
-    """ Wrap angles to the range [-pi, pi]. """
+    ''' Wrap angles to the range [-pi, pi]. '''
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 
 def sec2(x:float) -> float:
-    """ Compute sec^2(x) -> sec^2(x) = tan^2(x) + 1 """
+    ''' Compute sec^2(x) -> sec^2(x) = tan^2(x) + 1 '''
     return np.tan(x)**2 + 1
 
 
 def rk_four(f, x, u, T):
-    """
-    Perform fourth-order Runge-Kutta numerical integration.
-
-    The function to integrate is f(x, u, params), where the state variables are
-    collected in the variable x, we assume a constant input vector u over time
-    interval T > 0, and params is an array of the system's parameters.
-    """
+    ''' Perform fourth-order Runge-Kutta numerical integration '''
     k_1 = f(x, u)
     k_2 = f(x + T * k_1 / 2.0, u)
     k_3 = f(x + T * k_2 / 2.0, u)
@@ -76,10 +72,7 @@ def rk_four(f, x, u, T):
 
 
 def draw_rectangle(x, y, length, width, angle):
-    """
-    Finds points that draw a rectangle.
-    The rectangle has centre (x, y), a length, width, and angle [rad].
-    """
+    ''' Finds points that draw a rectangle '''
     V = np.zeros((2, 5))
     l = 0.5 * length
     w = 0.5 * width

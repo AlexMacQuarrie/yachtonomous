@@ -5,36 +5,33 @@ from config import parse_config
 from boat_model import boat, trim_sail
 from control import mpc
 from localization import ekf
-from sensor import WindSensor, get_measurements, estimate_initial_wind
+from sensor import WindSensor, get_measurements
 from navigation import plot_course
 from plot import plot_results
 from tools import rk_four, Angle, PlotCtrl
 
 '''
 W5/6
-- Allow rectangular pool (try pool_size, dest_pos, border_pad)
-- Clean up code, add comments
 - Use actual boat size
-
 - Try using constant velocity (maybe vary based on sail and/or rel wind angle?)
 - Try adding drift from wind to model (i.e. x_dot = -wind_speed*np.cos(rel_wind_ang+x[2]) + u[0]*np.cos(x[2]))
 '''
 
 def simulate() -> None:
+    ''' Simulation Entrypoint '''
     # Parse the simulation config
-    control_config, boat_config, test_config, \
-    initial_config, noise_config = parse_config()
+    control_config, boat_config, test_config, noise_config = parse_config()
 
-    # Create vehicle
-    vehicle = boat(boat_config)
+    # Create sailboat
+    sailboat = boat(boat_config)
 
     # Create the feature map
     num_features = 4
     f_map        = np.zeros((2, num_features))
-    f_map[:, 0]  = (0.0                  , 0.0                  )
-    f_map[:, 1]  = (0.0                  , test_config.pool_size)
-    f_map[:, 2]  = (test_config.pool_size, 0.0                  )
-    f_map[:, 3]  = (test_config.pool_size, test_config.pool_size)
+    f_map[:, 0]  = (0.0                     , 0.0                     )
+    f_map[:, 1]  = (0.0                     , test_config.pool_size[1])
+    f_map[:, 2]  = (test_config.pool_size[0], 0.0                     )
+    f_map[:, 3]  = (test_config.pool_size[0], test_config.pool_size[1])
 
     # Sensor and Process noise covariance matrices
     R = np.zeros((num_features+1, num_features+1))
@@ -43,17 +40,18 @@ def simulate() -> None:
     Q = np.diag(np.power(noise_config.input_noise, 2))
 
     # Get course to destination
-    init_rel_wind_angle_est = test_config.abs_wind_angle - initial_config.start_pos[2]
-    init_rel_wind_angle_est = estimate_initial_wind(init_rel_wind_angle_est, noise_config.wind_noise)
+    init_rel_wind_angle_est = test_config.abs_wind_angle - boat_config.start_pos[2]
+    init_rel_wind_angle_est = WindSensor.estimate_initial_wind(init_rel_wind_angle_est, 
+                                                               noise_config.wind_noise)
     x_d = plot_course(
-        np.asarray(initial_config.start_pos[:2]), 
+        np.asarray(boat_config.start_pos[:2]), 
         np.asarray(test_config.dest_pos), 
         Angle.exp(init_rel_wind_angle_est), 
-        Angle.exp(initial_config.start_pos[2]), 
+        Angle.exp(boat_config.start_pos[2]), 
         Angle.exp(boat_config.crit_wind_angle), 
         border_pad  = test_config.border_pad, 
         point_dist  = test_config.T*control_config.const_speed, 
-        dest_thresh = test_config.dest_thresh*vehicle.length, 
+        dest_thresh = test_config.dest_thresh*sailboat.length, 
         max_length  = 5.0/(test_config.T*control_config.const_speed), 
         plot_ctrl   = PlotCtrl.ALWAYS
     )
@@ -66,23 +64,22 @@ def simulate() -> None:
     wind_sensor = WindSensor(N)
 
     # Initialize arrays that will be populated with our inputs and states
-    num_states, num_inputs = 4, 2
-    x     = np.zeros((num_states, N))
-    u     = np.zeros((num_inputs, N))
-    x_hat = np.zeros((num_states, N))
-    P_hat = np.zeros((num_states, num_states, N))
+    x     = np.zeros((sailboat.num_states, N))
+    u     = np.zeros((sailboat.num_inputs, N))
+    x_hat = np.zeros((sailboat.num_states, N))
+    P_hat = np.zeros((sailboat.num_states, sailboat.num_states, N))
     w     = np.zeros(N)
     w_hat = np.zeros(N)
     s_d   = np.zeros(N)
     s     = np.zeros(N)
 
     # Initialize the state estimate and uncertainty
-    x_hat[:, 0]    = initial_config.start_pos
+    x_hat[:, 0]    = boat_config.start_pos
     P_hat[:, :, 0] = np.diag(np.power(noise_config.state_noise, 2))
 
     # Set the initial pose [m, m, rad, rad] and inputs [m/s, rad/s]
     x[:, 0] = x_hat[:, 0] + noise_config.start_noise*np.random.randn()
-    u[:, 0] = initial_config.init_inputs
+    u[:, 0] = (control_config.const_speed, 0.0)
 
     # Set the inital wind and sail angles (actual, estimated, desired)
     w[0]     = test_config.abs_wind_angle - x[2, 0]
@@ -91,7 +88,7 @@ def simulate() -> None:
     s[0]     = 0.0
 
     # Pre-compute the desired inputs
-    u_d = np.zeros((2, N))
+    u_d = np.zeros((sailboat.num_inputs, N))
     for k in range(N):
         u_d[0, k] = control_config.const_speed
         u_d[1, k] = 0.0
@@ -99,21 +96,21 @@ def simulate() -> None:
     # Run simulation
     for k in range(1, N):
         # Simulate the robot's motion
-        x[:, k] = rk_four(vehicle.f, x[:, k-1], u[:, k-1], test_config.T)
+        x[:, k] = rk_four(sailboat.f, x[:, k-1], u[:, k-1], test_config.T)
         w[k]    = test_config.abs_wind_angle - x[2, k-1]
 
         # Take measurements 
         z = get_measurements(x[:, k], test_config.exp_parms, noise_config.sensor_noise, f_map)
 
         # Use the measurements to estimate the robot's state
-        x_hat[:, k], P_hat[:, :, k] = ekf(vehicle, test_config.exp_parms, test_config.T, x_hat[:, k-1], 
+        x_hat[:, k], P_hat[:, :, k] = ekf(sailboat, test_config.exp_parms, test_config.T, x_hat[:, k-1], 
                                           P_hat[:, :, k-1], u[:, k-1], z, Q, R, f_map)
 
         # Take wind measurement seperately
         w_hat[k] = wind_sensor.read(k, w[k-1], x_hat[:, k-1], noise_config.wind_noise)
 
         # Feedback control (speed, steering rate)
-        u[:, k] = mpc(vehicle, control_config, test_config.T, N, k, x_d, u_d, x_hat)
+        u[:, k] = mpc(sailboat, control_config, test_config.T, N, k, x_d, u_d, x_hat)
 
         # Trim the sail
         s[k] = trim_sail(Angle.exp(w_hat[k-1]), Angle.exp(boat_config.crit_sail_angle)).log
@@ -123,7 +120,7 @@ def simulate() -> None:
         
 
     # Plot the results
-    plot_results(vehicle, t, N, test_config.T, f_map, x, x_hat, x_d, u, u_d, 
+    plot_results(sailboat, t, N, test_config.T, f_map, x, x_hat, x_d, u, u_d, 
                  w, w_hat, s_d, s, noise_config.wind_noise, P_hat, 
                  test_config.pool_size, test_config.dest_pos)
 

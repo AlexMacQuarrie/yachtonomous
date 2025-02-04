@@ -8,6 +8,7 @@ from navigation import NavigationError, plot_course
 
 
 def _test_navigation_individual() -> None:
+    ''' Inidividual Navigation Test '''
     boat = np.array((0.25, 0.25))
     dest = np.array((1.75, 1.75))
 
@@ -15,13 +16,12 @@ def _test_navigation_individual() -> None:
     wind_angle = Angle.exp(70, deg=True)
     crit_angle = Angle.exp(60, deg=True)
 
-    padding = 0.05
-
     plot_course(boat, dest, wind_angle, boat_angle, crit_angle, border_pad=padding, 
                 plot_ctrl=PlotCtrl.ALWAYS)
 
 
 def _test_navigation() -> None:
+    ''' Full Navigation Test Suite '''
     # Create permutations
     crits       = [Angle.exp(i, deg=True) for i in range(30, 70, 10)]
     winds       = [Angle.exp(i, deg=True) for i in range(-180, 180, 20)]
