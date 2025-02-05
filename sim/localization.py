@@ -8,12 +8,12 @@ from tools import arr
 
 
 def ekf(sailboat:boat, exp_parms:list, T:float, q:arr, P:arr, 
-        u:arr, z:arr, Q:arr, R:arr, f_map:arr) -> Tuple[arr, arr]:
+        u:float, z:arr, Q:arr, R:arr, f_map:arr) -> Tuple[arr, arr]:
     ''' Extended Kalman Filter for localization '''
     # Compute the Jacobian matrices (linearize about current estimate)
     num_states = len(q)
-    F = sailboat.F(T, u[0], q[2], q[3])
-    G = sailboat.G(T, q[2], q[3])
+    F = sailboat.F(T, q[2], q[3])
+    G = sailboat.G(T)
 
     # Compute the a priori estimate
     P_new = F @ P @ F.T + G @ Q @ G.T

@@ -49,11 +49,16 @@ class Angle:
 
     def __repr__(self) -> str:
         return '%.2f'%(math.degrees(self.log))
+    
+
+def saturate(u:float, sat_limit:float) -> float:
+    ''' Clamp inputs to within given limits '''
+    return max(u, -sat_limit) if u < 0 else min(u, sat_limit)
 
 
 def wrap_to_pi(angle:float):
     ''' Wrap angles to the range [-pi, pi]. '''
-    return (angle + np.pi) % (2 * np.pi) - np.pi
+    return (angle+np.pi)%(2*np.pi)-np.pi
 
 
 def sec2(x:float) -> float:
@@ -61,13 +66,15 @@ def sec2(x:float) -> float:
     return np.tan(x)**2 + 1
 
 
-def rk_four(f, x, u, T):
+def rk_four(f, x, u, T, max_phi):
     ''' Perform fourth-order Runge-Kutta numerical integration '''
     k_1 = f(x, u)
-    k_2 = f(x + T * k_1 / 2.0, u)
-    k_3 = f(x + T * k_2 / 2.0, u)
-    k_4 = f(x + T * k_3, u)
-    x_new = x + T / 6.0 * (k_1 + 2.0 * k_2 + 2.0 * k_3 + k_4)
+    k_2 = f(x + T*k_1/2.0, u)
+    k_3 = f(x + T*k_2/2.0, u)
+    k_4 = f(x + T*k_3, u)
+    x_new = x + T*(k_1 + 2.0*k_2 + 2.0*k_3 + k_4)/6.0
+    # Ensure rudder does not exceed max angle
+    x_new[3] = saturate(x_new[3], max_phi)
     return x_new
 
 

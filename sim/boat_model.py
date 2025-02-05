@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from matplotlib import patches
 from scipy.stats import chi2
 # Internal
-from tools import Angle, arr, draw_rectangle, sec2
+from tools import Angle, arr, draw_rectangle, sec2, saturate
 from config import settings
 
 
@@ -24,81 +24,80 @@ def trim_sail(rel_wind_angle:Angle, crit_angle:Angle) -> Angle:
 class boat:
     ''' Object to model, draw, and animate the boat '''
     def __init__(self, boat_config:settings):
-        self.length = boat_config.length
-        self.width = boat_config.width
+        self.length     = boat_config.length
+        self.width      = boat_config.width
+        self.max_phi    = boat_config.max_rudder_angle
         self.num_states = 4
-        self.num_inputs = 2
+        self.num_inputs = 1
 
-    def f(self, x:arr, u:arr):
+    def speed(self) -> float:
+        return 0.1
+
+    def f(self, x:arr, u:arr) -> arr:
         ''' Kinematic model '''
         f = np.zeros(4)
-        f[0] =  u[0] * np.cos(x[2])
-        f[1] =  u[0] * np.sin(x[2])
-        f[2] = -u[0] * np.tan(x[3])/self.length
-        f[3] =  u[1]
+        f[0] =  self.speed()*np.cos(x[2])
+        f[1] =  self.speed()*np.sin(x[2])
+        f[2] = -self.speed()*np.tan(x[3])/self.length
+        f[3] =  saturate(u, self.max_phi)
         return f
     
-    def A(self, v:float, theta:float, phi:float):
+    def A(self, theta:float, phi:float) -> arr:
         ''' Linearization of model w.r.t. state '''
-        return v*np.array(
+        return self.speed()*np.array(
             [
                 [0, 0, -np.sin(theta), 0                     ],
                 [0, 0,  np.cos(theta), 0                     ],
                 [0, 0,  0,             -sec2(phi)/self.length],
-                [0, 0,  0,             0                     ],
+                [0, 0,  0,             0                     ]
             ]
         )
 
-    def B(self, theta:float, phi:float):
+    def B(self) -> arr:
         ''' Linearization of model w.r.t. inputs '''
-        return np.array(
-            [
-                [ np.cos(theta),           0],
-                [ np.sin(theta),           0],
-                [-np.tan(phi)/self.length, 0],
-                [ 0,                       1],
-            ]
-        )
+        return np.array([[0, 0, 0, 1]]).T
 
-    def F(self, T:float, v:float, theta:float, phi:float):
+    def F(self, T:float, theta:float, phi:float) -> arr:
         ''' Discretization of A via Euler integration '''
-        return np.eye(4) + T*self.A(v, theta, phi)
+        return np.eye(4) + T*self.A(theta, phi)
 
-    def G(self, T:float, theta:float, phi:float):
+    def G(self, T:float) -> arr:
         ''' Discretization of B via Euler integration '''
-        return T*self.B(theta, phi)
+        return T*self.B()
 
     def draw(self, x:float, y:float, theta:float, phi:float):
         ''' Draw the boat using a series of points '''
-        # Left and right back wheels
+        board_width = 0.15
+        board_len   = 0.40
+        # Rudders
         X_L, Y_L = draw_rectangle(
-            x - 0.5 * self.width * np.sin(theta) - self.length * np.cos(theta),
-            y + 0.5 * self.width * np.cos(theta) - self.length * np.sin(theta),
-            0.5 * self.width,
-            0.25 * self.width,
+            x - 0.5*self.width*np.sin(theta) - self.length*np.cos(theta),
+            y + 0.5*self.width*np.cos(theta) - self.length*np.sin(theta),
+            board_len*self.width,
+            board_width*self.width,
             theta + phi,
         )
         X_R, Y_R = draw_rectangle(
-            x + 0.5 * self.width * np.sin(theta) - self.length * np.cos(theta),
-            y - 0.5 * self.width * np.cos(theta) - self.length * np.sin(theta),
-            0.5 * self.width,
-            0.25 * self.width,
+            x + 0.5*self.width*np.sin(theta) - self.length*np.cos(theta),
+            y - 0.5*self.width*np.cos(theta) - self.length*np.sin(theta),
+            board_len*self.width,
+            board_width*self.width,
             theta + phi,
         )
-        # Front wheel
+        # Daggerboard
         X_F, Y_F = draw_rectangle(
             x,
             y,
-            0.5 * self.width,
-            0.25 * self.width,
+            board_len*self.width,
+            board_width*self.width,
             theta,
         )
         # Body
         X_BD, Y_BD = draw_rectangle(
-            x - self.length / 2.0 * np.cos(theta),
-            y - self.length / 2.0 * np.sin(theta),
-            2.0 * self.length,
-            2.0 * self.width,
+            x + 0*self.length*np.cos(theta),
+            y + 0*self.length*np.sin(theta),
+            0.28,
+            0.28,
             theta,
         )
         # Return the arrays of points

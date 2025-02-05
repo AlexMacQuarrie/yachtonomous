@@ -12,9 +12,9 @@ from tools import rk_four, Angle, PlotCtrl
 
 '''
 W5/6
-- Use actual boat size
-- Try using constant velocity (maybe vary based on sail and/or rel wind angle?)
-- Try adding drift from wind to model (i.e. x_dot = -wind_speed*np.cos(rel_wind_ang+x[2]) + u[0]*np.cos(x[2]))
+- Dynamic speed with speed(w, theta)
+- Model irons slowdown (piecewise sped func)
+- Add wind drift (i.e. x_dot = -wind_speed*np.cos(rel_wind_ang+x[2]) + u[0]*np.cos(x[2]))
 '''
 
 def simulate() -> None:
@@ -37,7 +37,7 @@ def simulate() -> None:
     R = np.zeros((num_features+1, num_features+1))
     R[0:num_features, 0:num_features] = np.diag([noise_config.sensor_noise[0]**2]*num_features)
     R[num_features, num_features]     = noise_config.sensor_noise[1]**2
-    Q = np.diag(np.power(noise_config.input_noise, 2))
+    Q = np.diag([noise_config.input_noise**2])
 
     # Get course to destination
     init_rel_wind_angle_est = test_config.abs_wind_angle - boat_config.start_pos[2]
@@ -65,7 +65,8 @@ def simulate() -> None:
 
     # Initialize arrays that will be populated with our inputs and states
     x     = np.zeros((sailboat.num_states, N))
-    u     = np.zeros((sailboat.num_inputs, N))
+    u     = np.zeros(N)
+    u_d   = np.zeros(N)
     x_hat = np.zeros((sailboat.num_states, N))
     P_hat = np.zeros((sailboat.num_states, sailboat.num_states, N))
     w     = np.zeros(N)
@@ -79,7 +80,6 @@ def simulate() -> None:
 
     # Set the initial pose [m, m, rad, rad] and inputs [m/s, rad/s]
     x[:, 0] = x_hat[:, 0] + noise_config.start_noise*np.random.randn()
-    u[:, 0] = (control_config.const_speed, 0.0)
 
     # Set the inital wind and sail angles (actual, estimated, desired)
     w[0]     = test_config.abs_wind_angle - x[2, 0]
@@ -87,16 +87,10 @@ def simulate() -> None:
     s_d[0]   = trim_sail(Angle.exp(w[0]), Angle.exp(boat_config.crit_sail_angle)).log
     s[0]     = 0.0
 
-    # Pre-compute the desired inputs
-    u_d = np.zeros((sailboat.num_inputs, N))
-    for k in range(N):
-        u_d[0, k] = control_config.const_speed
-        u_d[1, k] = 0.0
-
     # Run simulation
     for k in range(1, N):
         # Simulate the robot's motion
-        x[:, k] = rk_four(sailboat.f, x[:, k-1], u[:, k-1], test_config.T)
+        x[:, k] = rk_four(sailboat.f, x[:, k-1], u[k-1], test_config.T, boat_config.max_rudder_angle)
         w[k]    = test_config.abs_wind_angle - x[2, k-1]
 
         # Take measurements 
@@ -104,13 +98,13 @@ def simulate() -> None:
 
         # Use the measurements to estimate the robot's state
         x_hat[:, k], P_hat[:, :, k] = ekf(sailboat, test_config.exp_parms, test_config.T, x_hat[:, k-1], 
-                                          P_hat[:, :, k-1], u[:, k-1], z, Q, R, f_map)
+                                          P_hat[:, :, k-1], u[k-1], z, Q, R, f_map)
 
         # Take wind measurement seperately
         w_hat[k] = wind_sensor.read(k, w[k-1], x_hat[:, k-1], noise_config.wind_noise)
 
-        # Feedback control (speed, steering rate)
-        u[:, k] = mpc(sailboat, control_config, test_config.T, N, k, x_d, u_d, x_hat)
+        # Feedback control (steering rate)
+        u[k] = mpc(sailboat, control_config, test_config.T, N, k, x_d, x_hat)
 
         # Trim the sail
         s[k] = trim_sail(Angle.exp(w_hat[k-1]), Angle.exp(boat_config.crit_sail_angle)).log
