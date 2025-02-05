@@ -2,6 +2,8 @@
 import json
 import math
 from typing import Tuple
+# Internal
+from tools import wrap_to_pi
 
 
 __CONFIG_PATH__ = 'sim_config.json'
@@ -13,7 +15,7 @@ class settings:
         for key, value in data.items():
             if len(key) > 3 and key[-4:] == '_deg':
                 key   = key[:-4]
-                value = math.radians(value)
+                value = wrap_to_pi(math.radians(value))
             setattr(self, key, value)
 
     def __getattr__(self, name):

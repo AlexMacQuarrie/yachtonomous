@@ -16,8 +16,7 @@ def _test_navigation_individual() -> None:
     wind_angle = Angle.exp(70, deg=True)
     crit_angle = Angle.exp(60, deg=True)
 
-    plot_course(boat, dest, wind_angle, boat_angle, crit_angle, border_pad=padding, 
-                plot_ctrl=PlotCtrl.ALWAYS)
+    plot_course(boat, dest, wind_angle, boat_angle, crit_angle, plot_ctrl=PlotCtrl.ALWAYS)
 
 
 def _test_navigation() -> None:

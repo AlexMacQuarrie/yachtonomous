@@ -7,38 +7,39 @@ from sensor import range_sensor, get_distance
 from tools import arr
 
 
-def ekf(sailboat:boat, exp_parms:list, T:float, q:arr, P:arr, 
+def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr, 
         u:float, z:arr, Q:arr, R:arr, f_map:arr) -> Tuple[arr, arr]:
     ''' Extended Kalman Filter for localization '''
     # Compute the Jacobian matrices (linearize about current estimate)
-    num_states = len(q)
-    F = sailboat.F(T, q[2], q[3])
+    num_states = len(x_hat)
+    F = sailboat.F(T, x_hat)
     G = sailboat.G(T)
 
     # Compute the a priori estimate
     P_new = F @ P @ F.T + G @ Q @ G.T
     P_new = 0.5*(P_new + P_new.T)  # Numerically help the covariance matrix stay symmetric
-    q_new = q + T*sailboat.f(q, u)
+    x_new = x_hat + T*sailboat.f(x_hat, u)
 
     # Linearize measurement model
     # Compute the Jacobian matrices (linearize about current estimate)
     num_features = f_map.shape[1]
-    num_states = len(q)
-    exp_measures = range_sensor(q, exp_parms, 0, f_map)
-    H = np.zeros((num_features+1, num_states))
+    num_states   = len(x_hat)
+    exp_measures = range_sensor(x_hat, exp_parms, 0, f_map)
+    H = np.zeros((num_features+2, num_states))
     for j in range(0, num_features):
-        exp_measure = exp_measures[j]
-        distance    = get_distance(q, f_map, j)
+        distance    = get_distance(x_hat, f_map, j)
         H[j, :] = np.array(
             [
-                -exp_parms[1]*exp_measure*(q[0] - f_map[0, j])/distance,
-                -exp_parms[1]*exp_measure*(q[1] - f_map[1, j])/distance,
+                -exp_parms[1]*exp_measures[j]*(x_hat[0] - f_map[0, j])/distance,
+                -exp_parms[1]*exp_measures[j]*(x_hat[1] - f_map[1, j])/distance,
+                0,
                 0,
                 0,
             ]
         )
-    # Add a measurement for theta (Like from IMU, after integration)
-    H[num_features, :] = np.array([0, 0, 1, 0])
+    # Add a measurement for theta and gamma (IMU & wind sensor)
+    H[num_features  , :] = np.array([0, 0, 1, 0, 0])
+    H[num_features+1, :] = np.array([0, 0, 0, 1, 0])
 
     # Check the observability of this system
     observability_matrix = H
@@ -53,14 +54,15 @@ def ekf(sailboat:boat, exp_parms:list, T:float, q:arr, P:arr,
     K = P_new @ H.T @ np.linalg.inv(H @ P_new @ H.T + R)
 
     # Compute a posteriori state estimate
-    z_hat = np.zeros(num_features+1)
-    z_hat[0:num_features] = range_sensor(q_new, exp_parms, 0, f_map)
-    z_hat[num_features] = q_new[2]
-    q_new = q_new + K @ (z - z_hat)
+    z_hat = np.zeros(num_features+2)
+    z_hat[0:num_features] = range_sensor(x_new, exp_parms, 0, f_map)
+    z_hat[num_features]   = x_new[2]
+    z_hat[num_features+1] = x_new[3]
+    x_new = x_new + K @ (z - z_hat)
 
     # Compute a posteriori covariance
     P_new = (np.eye(num_states) - K @ H) @ P_new @ (np.eye(num_states) - K @ H).T + K @ R @ K.T
     P_new = 0.5*(P_new + P_new.T)  # Numerically help the covariance matrix stay symmetric
 
     # Return the estimated state
-    return q_new, P_new
+    return x_new, P_new

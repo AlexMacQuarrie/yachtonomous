@@ -23,49 +23,61 @@ def trim_sail(rel_wind_angle:Angle, crit_angle:Angle) -> Angle:
 
 class boat:
     ''' Object to model, draw, and animate the boat '''
-    def __init__(self, boat_config:settings):
-        self.length     = boat_config.length
-        self.width      = boat_config.width
-        self.max_phi    = boat_config.max_rudder_angle
-        self.num_states = 4
-        self.num_inputs = 1
+    def __init__(self, boat_config:settings, control_config:settings):
+        self.length      = boat_config.length
+        self.width       = boat_config.width
+        self.max_phi_dot = control_config.input_saturation
+        self.const_speed = boat_config.speed
+        self.num_states  = 5
+        self.num_inputs  = 1
 
     def speed(self) -> float:
-        return 0.1
+        ''' Function compute boat speed '''
+        return self.const_speed
 
-    def f(self, x:arr, u:arr) -> arr:
+    def f(self, x:arr, u:float) -> arr:
         ''' Kinematic model '''
-        f = np.zeros(4)
+        f = np.zeros(self.num_states)
         f[0] =  self.speed()*np.cos(x[2])
         f[1] =  self.speed()*np.sin(x[2])
-        f[2] = -self.speed()*np.tan(x[3])/self.length
-        f[3] =  saturate(u, self.max_phi)
+        f[2] = -self.speed()*np.tan(x[4])/self.length
+        f[3] = -f[2]
+        f[4] =  saturate(u, self.max_phi_dot)
         return f
     
-    def A(self, theta:float, phi:float) -> arr:
+    def A(self, x:arr) -> arr:
         ''' Linearization of model w.r.t. state '''
         return self.speed()*np.array(
             [
-                [0, 0, -np.sin(theta), 0                     ],
-                [0, 0,  np.cos(theta), 0                     ],
-                [0, 0,  0,             -sec2(phi)/self.length],
-                [0, 0,  0,             0                     ]
+                [0, 0, -np.sin(x[2]),  0,  0                     ],
+                [0, 0,  np.cos(x[2]),  0,  0                     ],
+                [0, 0,  0,             0, -sec2(x[4])/self.length],
+                [0, 0,  0,             0,  sec2(x[4])/self.length],
+                [0, 0,  0,             0,  0                     ]
             ]
         )
 
     def B(self) -> arr:
         ''' Linearization of model w.r.t. inputs '''
-        return np.array([[0, 0, 0, 1]]).T
+        return np.array(
+            [
+                [0],
+                [0], 
+                [0],
+                [0],
+                [1],
+            ]
+        )
 
-    def F(self, T:float, theta:float, phi:float) -> arr:
+    def F(self, T:float, x:arr) -> arr:
         ''' Discretization of A via Euler integration '''
-        return np.eye(4) + T*self.A(theta, phi)
+        return np.eye(self.num_states) + T*self.A(x)
 
     def G(self, T:float) -> arr:
         ''' Discretization of B via Euler integration '''
         return T*self.B()
 
-    def draw(self, x:float, y:float, theta:float, phi:float):
+    def draw(self, x:float, y:float, theta:float, gamma:float, phi:float):
         ''' Draw the boat using a series of points '''
         board_width = 0.15
         board_len   = 0.40
@@ -103,16 +115,16 @@ class boat:
         # Return the arrays of points
         return X_L, Y_L, X_R, Y_R, X_F, Y_F, X_BD, Y_BD
 
-    def animate(self, x:arr, x_d:arr, x_hat:arr, w:arr, w_hat:arr, s:arr, P_hat:arr,
-                alpha:float, T:float, map_size:arr, f_map:arr, dest_pos:arr,
-                save_ani:bool, filename:str):
+    def animate(self, x:arr, x_d:arr, x_hat:arr, s:arr, alpha:float, T:float, 
+                map_size:arr, f_map:arr, dest_pos:arr, save_ani:bool, filename:str):
         ''' Animation of the boat '''
         # Wind Arow Stuff
         radius         = np.sqrt(2.0)*np.mean(map_size)/2.0
         arrow_len      = np.mean(map_size)*0.05
-        abs_wind_angle = w[0] + x[2, 0]
+        abs_wind_angle = x[2, 0] + x[3, 0]
         wind_arrow     = arrow_len*np.array((np.cos(abs_wind_angle), np.sin(abs_wind_angle)))
-        wa_base        = radius*np.array((np.cos(abs_wind_angle), np.sin(abs_wind_angle))) + (map_size[0]/2.0,map_size[1]/2.0)
+        wa_base        = radius*np.array((np.cos(abs_wind_angle), np.sin(abs_wind_angle))) + \
+                         (map_size[0]/2.0,map_size[1]/2.0)
         # Sail Stuff
         fig, ax = plt.subplots()
         plt.xlabel('x [m]')
@@ -121,7 +133,8 @@ class boat:
         ax.plot(f_map[0, :], f_map[1, :], 'C4*', label='Feature')
         plt.plot(dest_pos[0], dest_pos[1], 'C3D', label='Destination')
         plt.plot(x_hat[0, 0], x_hat[1, 0], 'C5D', label='Est. Start')
-        plt.arrow(wa_base[0]+wind_arrow[0], wa_base[1]+wind_arrow[1], -wind_arrow[0], -wind_arrow[1], head_width=0.05, color='b', label='Wind')
+        plt.arrow(wa_base[0]+wind_arrow[0], wa_base[1]+wind_arrow[1], 
+                  -wind_arrow[0], -wind_arrow[1], head_width=0.05, color='b', label='Wind')
         ax.add_patch(patches.Rectangle((0, 0), map_size[0], map_size[1], edgecolor='k', fill=False))
         (line,) = ax.plot([], [], 'C0')
         (estimated,) = ax.plot([], [], '--C1')
@@ -152,7 +165,7 @@ class boat:
         def movie(k:int):
             ''' The function called at each step of the animation '''
             # Draw Estimated Wind Arrow
-            est_wind_angle = w_hat[k] + x_hat[2, k]
+            est_wind_angle = x_hat[2, k] + x_hat[3, k]
             est_wind_vec   = arrow_len*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle)))
             est_wa_base    = radius*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle))) + (map_size[0]/2.0,map_size[1]/2.0)
             est_wind_arrow.set_data(x=est_wa_base[0]+est_wind_vec[0], 
@@ -170,33 +183,21 @@ class boat:
             desired.set_data(x_d[0, 0 : k + 1], x_d[1, 0 : k + 1])
             # Draw the Boat vehicle
             X_L, Y_L, X_R, Y_R, X_F, Y_F, X_B, Y_B = self.draw(
-                x[0, k], x[1, k], x[2, k], x[3, k]
+                x[0, k], x[1, k], x[2, k], x[3, k], x[4, k]
             )
             leftwheel.set_xy(np.transpose([X_L, Y_L]))
             rightwheel.set_xy(np.transpose([X_R, Y_R]))
             frontwheel.set_xy(np.transpose([X_F, Y_F]))
             body.set_xy(np.transpose([X_B, Y_B]))
-            # Compute eigenvalues and eigenvectors to find axes for covariance ellipse
-            W, V = np.linalg.eig(P_hat[0:2, 0:2, k])
-            # Find the index of the largest and smallest eigenvalues
-            j_max = np.argmax(W)
-            j_min = np.argmin(W)
-            ell = patches.Ellipse(
-                (x_hat[0, k], x_hat[1, k]),
-                2 * np.sqrt(s2 * W[j_max]),
-                2 * np.sqrt(s2 * W[j_min]),
-                angle=np.arctan2(V[j_max, 1], V[j_max, 0]) * 180 / np.pi,
-                alpha=0.2,
-                color='C1',
-            )
             # Add the simulation time
-            time_text.set_text('t = %.1f s' % (k * T))
+            time_text.set_text('t = %.1f s'%(k*T))
             # Set the axis limits 
             ax.set_xbound(lower=-1, upper=3)
             ax.set_ybound(lower=-1, upper=3)
             ax.figure.canvas.draw()
             # Return the objects to animate
-            return line, estimated, desired, leftwheel, rightwheel, frontwheel, body, time_text, est_wind_arrow
+            return line, estimated, desired, leftwheel, rightwheel, \
+                   frontwheel, body, time_text, est_wind_arrow
 
         # Create the animation
         ani = animation.FuncAnimation(
@@ -207,7 +208,7 @@ class boat:
             blit      = True,
             repeat    = False,
         )
-        if save_ani is True:
-            ani.save(filename, fps=min(1 / T, 10))
+        if save_ani:
+            ani.save(filename, fps=min(1/T, 10))
         # Return the figure object
         return ani

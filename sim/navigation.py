@@ -101,9 +101,10 @@ def plot_course(boat_pos        :np.ndarray,
         num_points = math.ceil(distance/point_dist)
         for i in range(num_points):
             x_y = boat_pos + (i+1)*path_vector
-            theta = Angle.exp(np.arctan2(path_vector[1], path_vector[0])).log
+            theta = Angle.exp(np.arctan2(path_vector[1], path_vector[0]))
+            gamma = abs_wind_angle - theta
             course.append(x_y)
-            state.append((x_y[0], x_y[1], theta, 0.0))
+            state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0))
             if np.linalg.norm(dest_pos-course[-1]) < dest_thresh:
                 break
     else:
@@ -135,9 +136,10 @@ def plot_course(boat_pos        :np.ndarray,
         # Set initial upwind conditions
         past_layline = False
         x_y   = boat_pos + boat_vec
-        theta = Angle.exp(np.arctan2(boat_vec[1], boat_vec[0])).log
+        theta = Angle.exp(np.arctan2(boat_vec[1], boat_vec[0]))
+        gamma = abs_wind_angle - theta
         course.append(x_y)
-        state.append((x_y[0], x_y[1], theta, 0.0))
+        state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0))
 
         # Plot upwind course
         while True:
@@ -172,9 +174,10 @@ def plot_course(boat_pos        :np.ndarray,
 
             # Extend course
             x_y   = current_pos + boat_vec
-            theta = Angle.exp(np.arctan2(boat_vec[1], boat_vec[0])).log
+            theta = Angle.exp(np.arctan2(boat_vec[1], boat_vec[0]))
+            gamma = abs_wind_angle - theta
             course.append(x_y)
-            state.append((x_y[0], x_y[1], theta, 0.0))
+            state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0))
 
 
     # Convert to np array now that size is fixed

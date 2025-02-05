@@ -20,12 +20,12 @@ def mpc(sailboat:boat, control_config:settings, T:float,
     n, m = sailboat.num_states, sailboat.num_inputs
     L = np.zeros((n*p, n))
     M = np.zeros((n*p, m*p))
-    xi_d = np.zeros(n*p)
+    x_d_cat = np.zeros(n*p)
 
     # Fill L & M
     for i in range(p):
-        # Compute the approximate linearization
-        F = sailboat.F(T, x_d[2, k+i-1], x_d[3, k+i-1])
+        # Compute the approximate linearizations
+        F = sailboat.F(T, x_d[:, k+i-1])
         G = sailboat.G(T)
 
         # Compute L and M
@@ -33,9 +33,10 @@ def mpc(sailboat:boat, control_config:settings, T:float,
         for j in range(p-i):
             M[n*(p-i)-n:n*(p-i), m*j:m*(j+1)] = np.linalg.matrix_power(F, p-i-j-1) @ G
 
-        xi_d[n*i:n*i+n] = x_d[:, k+i]
+        # Concatenated desired state
+        x_d_cat[n*i:n*i+n] = x_d[:, k+i]
 
     # Compute control inputs and take first
     K = np.linalg.inv(M.T @ Q @ M + R) @ M.T @ Q 
-    u = K @ (xi_d - L @ x_hat[:, k-1])
+    u = K @ (x_d_cat - L @ x_hat[:, k-1])
     return saturate(wrap_to_pi(u[0]), control_config.input_saturation)

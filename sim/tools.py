@@ -74,7 +74,7 @@ def rk_four(f, x, u, T, max_phi):
     k_4 = f(x + T*k_3, u)
     x_new = x + T*(k_1 + 2.0*k_2 + 2.0*k_3 + k_4)/6.0
     # Ensure rudder does not exceed max angle
-    x_new[3] = saturate(x_new[3], max_phi)
+    x_new[4] = saturate(x_new[4], max_phi)
     return x_new
 
 
