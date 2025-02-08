@@ -2,7 +2,7 @@
 import numpy as np
 # Internal
 from boat_model import boat
-from tools import arr, wrap_to_pi, saturate
+from tools import arr, saturate
 from config import settings
 
 
@@ -42,7 +42,6 @@ def mpc(sailboat:boat, control_config:settings, T:float, x_d:arr, x_hat:arr) -> 
     # Take first inputs
     u = u[:m]
     for i in range(m):    
-        # NOTE: always using wrap_to_pi as both inputs are rad/s
-        u[i] = saturate(wrap_to_pi(u[i]), control_config.input_saturation[i])
+        u[i] = saturate(u[i], control_config.input_saturation[i])
     
     return u

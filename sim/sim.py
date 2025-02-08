@@ -8,12 +8,11 @@ from localization import ekf
 from sensor import get_measurements, wind_sensor
 from navigation import plot_course
 from plot import plot_results
-from tools import rk_four, Angle, PlotCtrl
+from tools import Angle, PlotCtrl, rk_four
 
 '''
 TODO
-- Fix dead downwind angle wrapping errors
-- Add conversion from rate inputs/readings to angle inputs/readings (rad/s to rad). Maybe add plot (theta reading (f[2]), eta/phi inputs)
+- Add conversion from rate inputs/readings to angle inputs/readings (rad/s to rad). Maybe add plot (theta reading (x[2]), eta/phi inputs)
 
 If needed
 - Try dynamics (9 states, sensors/ekf change a bit)

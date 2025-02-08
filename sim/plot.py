@@ -5,7 +5,7 @@ from matplotlib import patches
 from scipy.stats import chi2
 # Internal
 from boat_model import boat
-from tools import arr, wrap_to_pi
+from tools import arr
 
 
 def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:arr, 
@@ -82,9 +82,9 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:ar
     for i in range(vehicle.num_states):
         ax2 = plt.subplot(int(str(vehicle.num_states+vehicle.num_inputs)+'1'+str(i+1)))
         if 'deg' in ylabels_states[i]:
-            plt.plot(t, wrap_to_pi(x[i, :])    *180.0/np.pi, 'C0'  , label='Actual')
-            plt.plot(t, wrap_to_pi(x_hat[i, :])*180.0/np.pi, 'C1--', label='Estimated')
-            plt.plot(t, wrap_to_pi(x_d[i, :])  *180.0/np.pi, 'C2--', label='Desired')
+            plt.plot(t, x[i, :]    *180.0/np.pi, 'C0'  , label='Actual')
+            plt.plot(t, x_hat[i, :]*180.0/np.pi, 'C1--', label='Estimated')
+            plt.plot(t, x_d[i, :]  *180.0/np.pi, 'C2--', label='Desired')
         else:
             plt.plot(t, x[i, :]    , 'C0'  , label='Actual')
             plt.plot(t, x_hat[i, :], 'C1--', label='Estimated')
@@ -97,8 +97,8 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:ar
     for i in range(vehicle.num_inputs):
         ax2 = plt.subplot(int(str(vehicle.num_states+vehicle.num_inputs)+'1'+str(vehicle.num_states+i+1)))
         if 'deg' in ylabels_inputs[i]:
-            plt.step(t, wrap_to_pi(u[i, :])  *180.0/np.pi, 'C0'  , label='Actual')
-            plt.plot(t, wrap_to_pi(u_d[i, :])*180.0/np.pi, 'C2--', label='Desired')
+            plt.step(t, u[i, :]  *180.0/np.pi, 'C0'  , label='Actual')
+            plt.plot(t, u_d[i, :]*180.0/np.pi, 'C2--', label='Desired')
         else:
             plt.step(t, u[i, :]  , 'C0'  , label='Actual')
             plt.plot(t, u_d[i, :], 'C2--', label='Desired')

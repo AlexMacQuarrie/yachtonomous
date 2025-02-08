@@ -29,7 +29,7 @@ class boat:
         f[0] =  self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.cos(x[2])              # x
         f[1] =  self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.sin(x[2])              # y
         f[2] = -self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.tan(x[4])/self.length  # theta
-        f[3] = -f[2]                                                                                           # gamma
+        f[3] = -f[2]                                                                                            # gamma
         f[4] =  saturate(u[1], self.max_phi_dot)                                                                # phi
         f[5] =  saturate(u[0], self.max_eta_dot)                                                                # eta
         return f

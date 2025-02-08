@@ -57,11 +57,6 @@ def saturate(u:float, sat_limit:float) -> float:
     return max(u, -sat_limit) if u < 0 else min(u, sat_limit)
 
 
-def wrap_to_pi(angle:float):
-    ''' Wrap angles to the range [-pi, pi]. '''
-    return (angle+np.pi)%(2*np.pi)-np.pi
-
-
 def sec2(x:float) -> float:
     ''' Compute sec^2(x) -> sec^2(x) = tan^2(x) + 1 '''
     return np.tan(x)**2 + 1
