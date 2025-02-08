@@ -8,9 +8,8 @@ from boat_model import boat
 from tools import arr, wrap_to_pi
 
 
-def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, 
-                 x_hat:arr, x_d:arr, u:arr, u_d:arr, s_d:arr, s:arr, 
-                 P_hat:arr, map_size:arr, dest_pos:arr) -> None:
+def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:arr, 
+                 x_d:arr, u:arr, u_d:arr, P_hat:arr, map_size:arr, dest_pos:arr) -> None:
     ''' Plot simulation results '''
     # Plot settings
     plt.rc('savefig', format='pdf')
@@ -20,7 +19,7 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr,
     ALPHA = 0.01
     s1    = chi2.isf(ALPHA, 1)
 
-    # Wind arrow plotting stuff
+    # Wind arrow plotting
     radius         = np.sqrt(2.0)*np.mean(map_size)/2.0
     arrow_len      = np.mean(map_size)*0.1
     abs_wind_angle = x[2, 0] + x[3, 0]
@@ -37,14 +36,14 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr,
                      (map_size[0]/2.0, map_size[1]/2.0)  
 
     # Sail Plotting
-    abs_sail_angle = s[0] + x[2, 0]
+    abs_sail_angle = x[5, 0] + x[2, 0]
     sail_arrow     = 0.15*np.array((-np.cos(abs_sail_angle), -np.sin(abs_sail_angle)))
     plt.arrow(x[0, 0], x[1, 0], sail_arrow[0], sail_arrow[1], head_width=0, color='k')
-    abs_sail_angle = s[-1] + x[2, -1]
+    abs_sail_angle = x[5, -1] + x[2, -1]
     sail_arrow     = 0.15*np.array((-np.cos(abs_sail_angle), -np.sin(abs_sail_angle)))
     plt.arrow(x[0, -1], x[1, -1], sail_arrow[0], sail_arrow[1], head_width=0, color='k')
 
-    # Plot the position of the vehicle in the plane
+    # Plot the start/end position of the vehicle in the plane
     plt.arrow(min_wa_base[0]+min_wind_arrow[0], min_wa_base[1]+min_wind_arrow[1], 
               -min_wind_arrow[0], -min_wind_arrow[1], head_width=0.05, color='C1', label='Min Wind Est.')
     plt.arrow(max_wa_base[0]+max_wind_arrow[0], max_wa_base[1]+max_wind_arrow[1], 
@@ -77,53 +76,36 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr,
     # Plot the states and inputs as a function of time
     fig2 = plt.figure(2)
     fig2.set_figheight(10.0)
-    ax2a = plt.subplot(711)
-    plt.plot(t, x[0, :]    , 'C0'  , label='Actual')
-    plt.plot(t, x_hat[0, :], 'C1--', label='Estimated')
-    plt.plot(t, x_d[0, :]  , 'C2--', label='Desired')
-    plt.grid(color='0.95')
-    plt.ylabel('x [m]')
-    plt.setp(ax2a, xticklabels=[])
-    plt.legend()
-    ax2b = plt.subplot(712)
-    plt.plot(t, x[1, :]    , 'C0'  , label='Actual')
-    plt.plot(t, x_hat[1, :], 'C1--', label='Estimated')
-    plt.plot(t, x_d[1, :]  , 'C2--', label='Desired')
-    plt.grid(color='0.95')
-    plt.ylabel('y [m]')
-    plt.setp(ax2b, xticklabels=[])
-    ax2c = plt.subplot(713)
-    plt.plot(t, wrap_to_pi(x[2, :])    *180.0/np.pi, 'C0'  , label='Actual')
-    plt.plot(t, wrap_to_pi(x_hat[2, :])*180.0/np.pi, 'C1--', label='Estimated')
-    plt.plot(t, wrap_to_pi(x_d[2, :])  *180.0/np.pi, 'C2--', label='Desired')
-    plt.ylabel('theta [deg]')
-    plt.grid(color='0.95')
-    plt.setp(ax2c, xticklabels=[])
-    ax2d = plt.subplot(714)
-    plt.plot(t, wrap_to_pi(x[3, :])    *180.0/np.pi, 'C0'  , label='Actual')
-    plt.plot(t, wrap_to_pi(x_hat[3, :])*180.0/np.pi, 'C1--', label='Estimated')
-    plt.plot(t, wrap_to_pi(x_d[3, :])  *180.0/np.pi, 'C2--', label='Desired')
-    plt.ylabel('gamma [deg]')
-    plt.grid(color='0.95')
-    plt.setp(ax2d, xticklabels=[])
-    ax2e = plt.subplot(715)
-    plt.plot(t, wrap_to_pi(x[4, :])    *180.0/np.pi, 'C0'  , label='Actual')
-    plt.plot(t, wrap_to_pi(x_hat[4, :])*180.0/np.pi, 'C1--', label='Estimated')
-    plt.plot(t, wrap_to_pi(x_d[4, :])  *180.0/np.pi, 'C2--', label='Desired')
-    plt.ylabel('phi [deg]')
-    plt.grid(color='0.95')
-    plt.setp(ax2e, xticklabels=[])
-    ax2f = plt.subplot(716)
-    plt.step(t, wrap_to_pi(u)  *180.0/np.pi, 'C0'  , label='Actual')
-    plt.plot(t, wrap_to_pi(u_d)*180.0/np.pi, 'C2--', label='Desired')
-    plt.ylabel('omega [deg/s]')
-    plt.grid(color='0.95')
-    plt.setp(ax2f, xticklabels=[])
-    ax2g = plt.subplot(717)
-    plt.plot(t, wrap_to_pi(s)  *180.0/np.pi, 'C0'  , label='Actual')
-    plt.plot(t, wrap_to_pi(s_d)*180.0/np.pi, 'C2--', label='Desired')
-    plt.ylabel('sail [deg]')
-    plt.grid(color='0.95')
+    ylabels_states = ['x [m]', 'y [m]', 'theta [deg]', 
+                      'gamma [deg]', 'phi [deg]', 'eta [deg]']
+    ylabels_inputs = ['sigma [deg/s]', 'omega [deg/s]']
+    for i in range(vehicle.num_states):
+        ax2 = plt.subplot(int(str(vehicle.num_states+vehicle.num_inputs)+'1'+str(i+1)))
+        if 'deg' in ylabels_states[i]:
+            plt.plot(t, wrap_to_pi(x[i, :])    *180.0/np.pi, 'C0'  , label='Actual')
+            plt.plot(t, wrap_to_pi(x_hat[i, :])*180.0/np.pi, 'C1--', label='Estimated')
+            plt.plot(t, wrap_to_pi(x_d[i, :])  *180.0/np.pi, 'C2--', label='Desired')
+        else:
+            plt.plot(t, x[i, :]    , 'C0'  , label='Actual')
+            plt.plot(t, x_hat[i, :], 'C1--', label='Estimated')
+            plt.plot(t, x_d[i, :]  , 'C2--', label='Desired')
+        plt.grid(color='0.95')
+        plt.ylabel(ylabels_states[i])
+        plt.setp(ax2, xticklabels=[])
+        if i == 0:
+            plt.legend()
+    for i in range(vehicle.num_inputs):
+        ax2 = plt.subplot(int(str(vehicle.num_states+vehicle.num_inputs)+'1'+str(vehicle.num_states+i+1)))
+        if 'deg' in ylabels_inputs[i]:
+            plt.step(t, wrap_to_pi(u[i, :])  *180.0/np.pi, 'C0'  , label='Actual')
+            plt.plot(t, wrap_to_pi(u_d[i, :])*180.0/np.pi, 'C2--', label='Desired')
+        else:
+            plt.step(t, u[i, :]  , 'C0'  , label='Actual')
+            plt.plot(t, u_d[i, :], 'C2--', label='Desired')
+        plt.ylabel(ylabels_inputs[i])
+        plt.grid(color='0.95')
+        if i != vehicle.num_inputs-1:
+            plt.setp(ax2, xticklabels=[])  
     plt.xlabel('t [s]')
     plt.savefig('outputs/boat_state_and_inputs.pdf')
 
@@ -131,81 +113,28 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr,
     sigma = np.zeros((x.shape[0], N))
     fig3 = plt.figure(3)
     fig3.set_figheight(10.0)
-    ax3a = plt.subplot(511)
-    sigma[0, :] = np.sqrt(s1*P_hat[0, 0, :])
-    plt.fill_between(
-        t,
-        -sigma[0, :],
-         sigma[0, :],
-        color = 'C0',
-        alpha = 0.2,
-        label = str(100*(1-ALPHA)) + ' % Confidence',
-    )
-    plt.plot(t, x[0, :]-x_hat[0, :], 'C0', label='Error')
-    plt.grid(color='0.95')
-    plt.ylabel('e_x [m]')
-    plt.setp(ax3a, xticklabels=[])
-    plt.legend()
-    ax3b = plt.subplot(512)
-    sigma[1, :] = np.sqrt(s1*P_hat[1, 1, :])
-    plt.fill_between(
-        t,
-        -sigma[1, :],
-         sigma[1, :],
-        color = 'C0',
-        alpha = 0.2,
-        label = str(100*(1-ALPHA))+' % Confidence',
-    )
-    plt.plot(t, x[1, :] - x_hat[1, :], 'C0', label='Error')
-    plt.grid(color='0.95')
-    plt.ylabel('e_y [m]')
-    plt.setp(ax3b, xticklabels=[])
-    ax3c = plt.subplot(513)
-    sigma[2, :] = np.sqrt(s1*P_hat[2, 2, :])
-    plt.fill_between(
-        t,
-        -sigma[2, :]*180.0/np.pi,
-         sigma[2, :]*180.0/np.pi,
-        color = 'C0',
-        alpha = 0.2,
-        label = str(100*(1-ALPHA)) + ' % Confidence',
-    )
-    plt.plot(t, (x[2, :]-x_hat[2, :])*180.0/np.pi, 'C0', label='Error')
-    plt.ylabel('e_theta [deg]')
-    plt.grid(color='0.95')
-    plt.setp(ax3c, xticklabels=[])
-    ax3d  = plt.subplot(514)
-    sigma[3, :] = np.sqrt(s1*P_hat[3, 3, :])
-    plt.fill_between(
-        t,
-        -sigma[3, :]*180.0/np.pi,
-         sigma[3, :]*180.0/np.pi,
-        color = 'C0',
-        alpha = 0.2,
-        label = str(100*(1-ALPHA)) + ' % Confidence',
-    )
-    plt.plot(t, (x[3, :]-x_hat[3, :])*180/np.pi, 'C0', label='Error')
-    plt.ylabel('e_gamma [deg]')
-    plt.grid(color='0.95')
-    plt.setp(ax3d, xticklabels=[])
-    ax3e = plt.subplot(515)
-    sigma[4, :] = np.sqrt(s1*P_hat[4, 4, :])
-    plt.fill_between(
-        t,
-        -sigma[4, :]*180.0/np.pi,
-         sigma[4, :]*180.0/np.pi,
-        color = 'C0',
-        alpha = 0.2,
-        label = str(100*(1-ALPHA)) + ' % Confidence',
-    )
-    plt.plot(t, (x[4, :]-x_hat[4, :])*180/np.pi, 'C0', label='Error')
-    plt.ylabel('e_phi [deg]')
-    plt.grid(color='0.95')
+    for i in range(vehicle.num_states):
+        ax3 = plt.subplot(int(str(vehicle.num_states)+'1'+str(i+1)))
+        sigma[i, :] = np.sqrt(s1*P_hat[i, i, :])
+        if 'deg' in ylabels_states[i]:
+            plt.fill_between(t, -sigma[i, :]*180.0/np.pi, sigma[i, :]*180.0/np.pi, color = 'C0',
+                             alpha = 0.2, label = str(100*(1-ALPHA)) + ' % Confidence')
+            plt.plot(t, (x[i, :]-x_hat[i, :])*180.0/np.pi, 'C0', label='Error')
+        else:
+            plt.fill_between(t, -sigma[i, :]            , sigma[i, :]            , color = 'C0',
+                             alpha = 0.2, label = str(100*(1-ALPHA)) + ' % Confidence')
+            plt.plot(t,  x[i, :]-x_hat[i, :]             , 'C0', label='Error')
+        plt.grid(color='0.95')
+        plt.ylabel('e_' + ylabels_states[i])
+        if i != vehicle.num_states-1:
+            plt.setp(ax3, xticklabels=[])
+        if i == 0:
+            plt.legend()
     plt.xlabel('t [s]')
     plt.savefig('outputs/boat_state_errors.pdf')
 
     # Animate & Save Gif
-    vehicle.animate(x, x_d, x_hat, s, ALPHA, T, map_size, f_map, dest_pos, 
+    vehicle.animate(x, x_d, x_hat, T, map_size, f_map, dest_pos, 
                     save_ani=True, filename='outputs/boat_animation.gif')
 
     # Show all the plots to the screen

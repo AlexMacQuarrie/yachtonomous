@@ -3,22 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import patches
-from scipy.stats import chi2
+from typing import Tuple
 # Internal
-from tools import Angle, arr, draw_rectangle, sec2, saturate
+from tools import arr, draw_rectangle, sec2, saturate
 from config import settings
-
-
-def trim_sail(rel_wind_angle:Angle, crit_angle:Angle) -> Angle:
-    ''' 
-        Trim the sail to half the relative wind angle,
-        but ensure crit_angle < sail_angle < 90 deg
-    '''
-    # Since rel_wind_angle is [-180, 180], division is fine
-    if rel_wind_angle.log >= 0:
-        return Angle.exp(max( crit_angle.log, rel_wind_angle.log/2.0))
-    else:
-        return Angle.exp(min(-crit_angle.log, rel_wind_angle.log/2.0))
 
 
 class boat:
@@ -26,34 +14,52 @@ class boat:
     def __init__(self, boat_config:settings, control_config:settings):
         self.length      = boat_config.length
         self.width       = boat_config.width
-        self.max_phi_dot = control_config.input_saturation
-        self.const_speed = boat_config.speed
-        self.num_states  = 5
-        self.num_inputs  = 1
+        self.num_states  = boat_config.num_states_inputs[0]
+        self.num_inputs  = boat_config.num_states_inputs[1]
+        self.s           = boat_config.speed
+        self.a           = boat_config.gamma_coeffs[0]
+        self.b           = boat_config.gamma_coeffs[1]
+        self.c           = boat_config.gamma_coeffs[2]
+        self.max_eta_dot = control_config.input_saturation[0]
+        self.max_phi_dot = control_config.input_saturation[1]
 
-    def speed(self) -> float:
-        ''' Function compute boat speed '''
-        return self.const_speed
-
-    def f(self, x:arr, u:float) -> arr:
-        ''' Kinematic model '''
+    def f(self, x:arr, u:arr) -> arr:
+        ''' Kinematic model, x_dot = A(q) + B*u '''
         f = np.zeros(self.num_states)
-        f[0] =  self.speed()*np.cos(x[2])
-        f[1] =  self.speed()*np.sin(x[2])
-        f[2] = -self.speed()*np.tan(x[4])/self.length
-        f[3] = -f[2]
-        f[4] =  saturate(u, self.max_phi_dot)
+        f[0] =  self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.cos(x[2])              # x
+        f[1] =  self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.sin(x[2])              # y
+        f[2] = -self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.tan(x[4])/self.length  # theta
+        f[3] = -f[2]                                                                                           # gamma
+        f[4] =  saturate(u[1], self.max_phi_dot)                                                                # phi
+        f[5] =  saturate(u[0], self.max_eta_dot)                                                                # eta
         return f
     
     def A(self, x:arr) -> arr:
         ''' Linearization of model w.r.t. state '''
-        return self.speed()*np.array(
+        dx_dt = -self.s* np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.sin(x[2])
+        dx_dg =  self.s*(np.sin(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c) + np.cos(2*x[5]-x[3])*(4*self.a*x[3]**3 + 2*self.b*x[3]))*np.cos(x[2])
+        dx_de = -self.s* np.sin(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.cos(x[2])*2
+
+        dy_dt =  self.s* np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.cos(x[2])
+        dy_dg =  self.s*(np.sin(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c) + np.cos(2*x[5]-x[3])*(4*self.a*x[3]**3 + 2*self.b*x[3]))*np.sin(x[2])
+        dy_de = -self.s* np.sin(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.sin(x[2])*2
+
+        dt_dg =  self.s*(np.sin(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c) + np.cos(2*x[5]-x[3])*(4*self.a*x[3]**3 + 2*self.b*x[3]))*np.tan(x[4])/self.length
+        dt_dp = -self.s* np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*  sec2(x[4])/self.length
+        dt_de =  self.s* np.sin(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.tan(x[4])*2/self.length
+
+        dg_dg = -dt_dg
+        dg_dp = -dt_dp
+        dg_de = -dt_de
+
+        return np.array(
             [
-                [0, 0, -np.sin(x[2]),  0,  0                     ],
-                [0, 0,  np.cos(x[2]),  0,  0                     ],
-                [0, 0,  0,             0, -sec2(x[4])/self.length],
-                [0, 0,  0,             0,  sec2(x[4])/self.length],
-                [0, 0,  0,             0,  0                     ]
+                [0, 0, dx_dt, dx_dg, 0,     dx_de],
+                [0, 0, dy_dt, dy_dg, 0,     dy_de],
+                [0, 0, 0,     dt_dg, dt_dp, dt_de],
+                [0, 0, 0,     dg_dg, dg_dp, dg_de],
+                [0, 0, 0,     0,     0,     0    ],
+                [0, 0, 0,     0,     0,     0    ],
             ]
         )
 
@@ -61,11 +67,12 @@ class boat:
         ''' Linearization of model w.r.t. inputs '''
         return np.array(
             [
-                [0],
-                [0], 
-                [0],
-                [0],
-                [1],
+                [0, 0],
+                [0, 0], 
+                [0, 0],
+                [0, 0],
+                [0, 1],
+                [1, 0],
             ]
         )
 
@@ -76,8 +83,14 @@ class boat:
     def G(self, T:float) -> arr:
         ''' Discretization of B via Euler integration '''
         return T*self.B()
+    
+    def max_speed(self, gamma:float, crit_angle:float) -> float:
+        ''' Get max possible boat speed given rel wind angle '''
+        gamma = max(np.abs(gamma), crit_angle)
+        return self.s*(self.a*gamma**4 + self.b*gamma**2 + self.c)
 
-    def draw(self, x:float, y:float, theta:float, gamma:float, phi:float):
+    def draw(self, x:float, y:float, theta:float, 
+             gamma:float, phi:float, eta:float) -> Tuple[float]:
         ''' Draw the boat using a series of points '''
         board_width = 0.15
         board_len   = 0.40
@@ -115,8 +128,9 @@ class boat:
         # Return the arrays of points
         return X_L, Y_L, X_R, Y_R, X_F, Y_F, X_BD, Y_BD
 
-    def animate(self, x:arr, x_d:arr, x_hat:arr, s:arr, alpha:float, T:float, 
-                map_size:arr, f_map:arr, dest_pos:arr, save_ani:bool, filename:str):
+    def animate(self, x:arr, x_d:arr, x_hat:arr, T:float, 
+                map_size:arr, f_map:arr, dest_pos:arr, 
+                save_ani:bool, filename:str) -> animation.FuncAnimation:
         ''' Animation of the boat '''
         # Wind Arow Stuff
         radius         = np.sqrt(2.0)*np.mean(map_size)/2.0
@@ -146,9 +160,8 @@ class boat:
         est_wind_arrow = ax.arrow([], [], [], [], head_width=0.05, color='C1')
         sail = ax.arrow([], [], [], [], head_width=0, color='k')
         time_text = ax.text(0.05, 0.9, '', transform=ax.transAxes)
-        s2 = chi2.isf(alpha, 2)
 
-        def init():
+        def init() -> Tuple:
             ''' A function that initializes the animation '''
             line.set_data([], [])
             estimated.set_data([], [])
@@ -160,31 +173,31 @@ class boat:
             est_wind_arrow.set_data()
             sail.set_data()
             time_text.set_text('')
-            return line, estimated, desired, leftwheel, rightwheel, frontwheel, body, time_text, est_wind_arrow
+            return line, estimated, desired, leftwheel, rightwheel, \
+                   frontwheel, body, time_text, est_wind_arrow
 
-        def movie(k:int):
+        def movie(k:int) -> Tuple:
             ''' The function called at each step of the animation '''
             # Draw Estimated Wind Arrow
             est_wind_angle = x_hat[2, k] + x_hat[3, k]
             est_wind_vec   = arrow_len*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle)))
-            est_wa_base    = radius*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle))) + (map_size[0]/2.0,map_size[1]/2.0)
+            est_wa_base    = radius*np.array((np.cos(est_wind_angle), np.sin(est_wind_angle))) + \
+                             (map_size[0]/2.0,map_size[1]/2.0)
             est_wind_arrow.set_data(x=est_wa_base[0]+est_wind_vec[0], 
                                     y=est_wa_base[1]+est_wind_vec[1], 
                                     dx=-est_wind_vec[0], dy=-est_wind_vec[1])
             # Draw Sail
-            abs_sail_angle = s[k] + x[2, k]
+            abs_sail_angle = x[5, k] + x[2, k]
             sail_arrow     = 0.15*np.array((-np.cos(abs_sail_angle), -np.sin(abs_sail_angle)))
             sail.set_data(x=x[0, k], y=x[1, k], dx=sail_arrow[0], dy=sail_arrow[1])
             # Draw the estimated trajectory
-            estimated.set_data(x_hat[0, 0 : k + 1], x_hat[1, 0 : k + 1])
+            estimated.set_data(x_hat[0, 0:k+1], x_hat[1, 0:k+1])
             # Draw the path followed by the vehicle
-            line.set_data(x[0, 0 : k + 1], x[1, 0 : k + 1])
+            line.set_data(x[0, 0:k+1], x[1, 0 : k+1])
             # Draw the desired trajectory
-            desired.set_data(x_d[0, 0 : k + 1], x_d[1, 0 : k + 1])
+            desired.set_data(x_d[0, 0:k+1], x_d[1, 0:k+1])
             # Draw the Boat vehicle
-            X_L, Y_L, X_R, Y_R, X_F, Y_F, X_B, Y_B = self.draw(
-                x[0, k], x[1, k], x[2, k], x[3, k], x[4, k]
-            )
+            X_L, Y_L, X_R, Y_R, X_F, Y_F, X_B, Y_B = self.draw(*x[:, k])
             leftwheel.set_xy(np.transpose([X_L, Y_L]))
             rightwheel.set_xy(np.transpose([X_R, Y_R]))
             frontwheel.set_xy(np.transpose([X_F, Y_F]))

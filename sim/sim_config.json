@@ -1,35 +1,39 @@
 {
     "control": {
         "max_pred_horz"        : 25,
-        "state_weights"        : [10.0, 10.0, 5.0, 5.0, 1.0],
-        "input_weight"         : 3.0,
-        "input_saturation_deg" : 45
+        "state_weights"        : [10.0, 10.0, 5.0, 5.0, 2.0, 1.0],
+        "input_weights"        : [1.0, 5.0],
+        "input_saturation_deg" : [45, 45],
+        "init_inputs_deg"      : [0, 0]
     },
 
     "boat": {
-        "est_start_pos"        : [0.3, 0.3, 0.78539816339, null, 0.0],
+        "num_states_inputs"    : [6, 2],
+        "est_start_pos"        : [0.35, 0.35, null, null, 0.0, 0.0],
+        "gamma_coeffs"         : [-0.018072, 0.205949, 0.405128],
         "length"               : 0.125,
         "width"                : 0.22,
-        "crit_sail_angle_deg"  : 20,
         "crit_wind_angle_deg"  : 45,
-        "max_rudder_angle_deg" : 45,
+        "max_phi_deg"          : 45,
+        "max_eta_deg"          : 90,
         "speed"                : 0.1
     },
 
     "test": {
         "T"                  : 0.05,
-        "pool_size"          : [2.0, 2.0],
-        "dest_pos"           : [1.70, 1.70],
         "abs_wind_angle_deg" : 60,
+        "pool_size"          : [2.0, 2.0],
+        "dest_pos"           : [1.65, 1.65],
         "exp_parms"          : [1.0, 1.0],
-        "border_pad"         : 0,
-        "dest_thresh"        : 1.0
+        "border_pad"         : 0.05,
+        "dest_thresh"        : 1.0,
+        "point_speed_factor" : 0.9
     },
 
     "noise": {
-        "start_noise"  : [0.05, 0.05, 0.05, 0.0, 0.05],
-        "sensor_noise" : [0.15, 0.1, 0.1],
-        "input_noise"  : 0.1,
-        "state_noise"  : [0.5, 0.5, 0.78539816339, 1.57079632679, 0.261799]
+        "start_noise"  : [0.05, 0.05, 0.05, 0.0, 0.05, 0.05],
+        "sensor_noise" : [0.1, 0.1, 0.1, 0.1],
+        "input_noise"  : [0.1, 0.1],
+        "state_noise"  : [0.5, 0.5, 0.78539816339, 0.78539816339, 0.78539816339, 0.78539816339]
     }
 }

@@ -1,7 +1,7 @@
 # External
 import numpy as np
 # Internal
-from tools import arr
+from tools import arr, wrap_to_pi
     
 
 def range_sensor(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
@@ -19,21 +19,30 @@ def range_sensor(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
 
 def rotation_sensor(x:arr, sigma_w:float) -> float:
     ''' Simulate IMU angle measurement '''
-    return x[2] + sigma_w*np.random.randn()
+    return wrap_to_pi(x[2] + sigma_w*np.random.randn())
 
 
 def wind_sensor(x:arr, sigma_w:float):
-    ''' Simulate relative wind angle measurement '''
-    return x[3] + sigma_w*np.random.randn()
+    ''' 
+        Simulate relative wind angle measurement.
+        Technically this is done using 2 rotation sensors
+    '''
+    return wrap_to_pi(x[3] + sigma_w*np.random.randn())
+
+
+def sail_angle_sensor(x:arr, sigma_w:float) -> float:
+    ''' Simulate sail angle measurement '''
+    return wrap_to_pi(x[5] + sigma_w*np.random.randn())
 
 
 def get_measurements(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
     ''' Get range and rotation measurements '''
     num_features = f_map.shape[1]
-    z = np.zeros(num_features+2)
-    z[0:num_features] = range_sensor(x, exp_parms, sigma_w[0], f_map)
-    z[num_features]   = rotation_sensor(x, sigma_w[1])
-    z[num_features+1] = wind_sensor(x, sigma_w[2])
+    z = np.zeros(num_features+3)
+    z[0:num_features] = range_sensor(x, exp_parms, sigma_w[0], f_map)  # x, y
+    z[num_features]   = rotation_sensor(x, sigma_w[1])                 # theta
+    z[num_features+1] = wind_sensor(x, sigma_w[2])                     # gamma
+    z[num_features+2] = sail_angle_sensor(x, sigma_w[3])               # eta
     return z 
 
 

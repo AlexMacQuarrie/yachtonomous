@@ -2,23 +2,26 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Tuple
 # Internal
-from tools import Angle, PlotCtrl
+from tools import Angle, PlotCtrl, arr
 
 
 class NavigationError(Exception):
+    ''' Custom error to check in nav testing '''
     pass
 
 
-def _is_upwind(path_angle:Angle, abs_wind_angle:Angle, crit_angle_wind:Angle) -> bool:
+def _is_upwind(path_angle:Angle, abs_wind_angle:Angle, 
+               crit_angle_wind:Angle) -> bool:
     ''' Check if boat moving upwind '''
     anglediff = path_angle - abs_wind_angle
     return -crit_angle_wind.log < round(anglediff.log, 6) < crit_angle_wind.log
 
 
-def _is_out_of_bounds(current_pos:np.ndarray, boat_vec:np.ndarray,
-                     x_lim_l:float, x_lim_h:float, 
-                     y_lim_l:float, y_lim_h:float) -> bool:
+def _is_out_of_bounds(current_pos:arr, boat_vec:arr,
+                      x_lim_l:float, x_lim_h:float, 
+                      y_lim_l:float, y_lim_h:float) -> bool:
     ''' Check if boat is out of bounds '''
     return (current_pos[0] < x_lim_l and boat_vec[0] < 0
          or current_pos[0] > x_lim_h and boat_vec[0] > 0
@@ -26,18 +29,18 @@ def _is_out_of_bounds(current_pos:np.ndarray, boat_vec:np.ndarray,
          or current_pos[1] > y_lim_h and boat_vec[1] > 0)
 
 
-def plot_course(boat_pos        :np.ndarray,
-                dest_pos        :np.ndarray,
+def plot_course(boat_pos        :arr,
+                dest_pos        :arr,
                 wind_angle      :Angle,
                 boat_angle      :Angle,
                 crit_angle_wind :Angle,
-                border_pad      :float      = 0.0,
-                point_dist      :float      = 0.05,
-                dest_thresh     :float      = 0.1,
-                max_length      :int        = 300,
-                plot_ctrl       :PlotCtrl   = PlotCtrl.ON_FAIL,
-                true_start      :np.ndarray = None
-                ) -> np.ndarray:
+                border_pad      :float    = 0.0,
+                point_dist      :float    = 0.05,
+                dest_thresh     :float    = 0.1,
+                max_length      :int      = 300,
+                plot_ctrl       :PlotCtrl = PlotCtrl.ON_FAIL,
+                true_start      :arr      = None
+                ) -> Tuple[arr, arr]:
     ''' Plot course from start to destination '''
     # Check crit angle (relative to wind direction, which is relative to boat direction)
     if not (math.radians(0) < crit_angle_wind.log < math.radians(90)):
@@ -49,17 +52,18 @@ def plot_course(boat_pos        :np.ndarray,
         raise NavigationError('Point distance must be small enough to ensure we do not miss the desintation')
 
     # Initial calculations
-    course         = []
-    state          = []
+    state, inputs  = [], []
     path_vector    = dest_pos-boat_pos
     distance       = np.linalg.norm(path_vector)
-    if distance < dest_thresh:
-        raise NavigationError(f'Boat={boat_pos} and Destination={dest_pos} are too close')
     path_vector    = point_dist*path_vector/distance  # Scaled to step correct distance
     path_angle     = Angle.exp(np.arctan2(path_vector[1], path_vector[0]))
     abs_wind_angle = wind_angle + boat_angle
     crit_angle     = abs_wind_angle - crit_angle_wind
     left_crit      = crit_angle + crit_angle_wind + crit_angle_wind
+
+    # Check we aren't starting too close
+    if distance < dest_thresh:
+        raise NavigationError(f'Boat={boat_pos} and Destination={dest_pos} are too close')
 
     # Get x and y limits
     # Assumes boat is left and below destination
@@ -103,9 +107,11 @@ def plot_course(boat_pos        :np.ndarray,
             x_y = boat_pos + (i+1)*path_vector
             theta = Angle.exp(np.arctan2(path_vector[1], path_vector[0]))
             gamma = abs_wind_angle - theta
-            course.append(x_y)
-            state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0))
-            if np.linalg.norm(dest_pos-course[-1]) < dest_thresh:
+
+            state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0, gamma.log/2.0))
+            inputs.append((0.0, 0.0))
+
+            if np.linalg.norm(dest_pos-state[-1][:2]) < dest_thresh:
                 break
     else:
         ### Upwind trajectory
@@ -135,16 +141,18 @@ def plot_course(boat_pos        :np.ndarray,
 
         # Set initial upwind conditions
         past_layline = False
+
         x_y   = boat_pos + boat_vec
         theta = Angle.exp(np.arctan2(boat_vec[1], boat_vec[0]))
         gamma = abs_wind_angle - theta
-        course.append(x_y)
-        state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0))
+
+        state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0, gamma.log/2.0))
+        inputs.append((0.0, 0.0))
 
         # Plot upwind course
         while True:
             # Get current position info
-            current_pos   = course[-1]
+            current_pos   = state[-1][:2]
             vec_to_dest   = dest_pos-current_pos
             dist_to_dest  = np.linalg.norm(vec_to_dest)
             angle_to_dest = Angle.exp(np.arctan2(vec_to_dest[1], vec_to_dest[0]))
@@ -165,7 +173,7 @@ def plot_course(boat_pos        :np.ndarray,
                     tack_matrix = tack_matrix.transpose()
 
             # Error out if we somehow fail to each the destination in a reasonable time
-            if len(course) > max_length:
+            if len(state) > max_length:
                 err = NavigationError(f'Course failed to reach the destination after {max_length} points')
                 failed = True
                 if plot_ctrl == PlotCtrl.NEVER or plot_ctrl == PlotCtrl.ON_PASS:
@@ -176,20 +184,21 @@ def plot_course(boat_pos        :np.ndarray,
             x_y   = current_pos + boat_vec
             theta = Angle.exp(np.arctan2(boat_vec[1], boat_vec[0]))
             gamma = abs_wind_angle - theta
-            course.append(x_y)
-            state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0))
+
+            state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0, gamma.log/2.0))
+            inputs.append((0.0, 0.0))
 
 
     # Convert to np array now that size is fixed
-    course = np.asarray(course)
-    state = np.asarray(state)
+    state  = np.asarray(state)
+    inputs = np.asarray(inputs)
 
     # Early exit if not plotting
     if (plot_ctrl == PlotCtrl.NEVER 
     or (    failed and plot_ctrl == PlotCtrl.ON_PASS) 
     or (not failed and plot_ctrl == PlotCtrl.ON_FAIL)):
         if failed: raise err
-        return state.T
+        return state.T, inputs.T
     
     # Set some tunable plot sizing multipliers
     # All of these will be multiplied by the plot size
@@ -214,8 +223,8 @@ def plot_course(boat_pos        :np.ndarray,
     plt.plot(boat_pos[0], boat_pos[1], 'go')
     plt.plot(dest_pos[0], dest_pos[1], 'ro')
     # Plot course (points and line)
-    plt.scatter(course[:, 0], course[:, 1], s=int(dot_size*plot_size), c='b')
-    plt.plot(course[:, 0], course[:, 1], c='b')
+    plt.scatter(state[:, 0], state[:, 1], s=int(dot_size*plot_size), c='b')
+    plt.plot(state[:, 0], state[:, 1], c='b')
     # Plot x or y limits
     plt.plot((x_lim_l, x_lim_l), (y_lim_l, y_lim_h), 'k')
     plt.plot((x_lim_h, x_lim_h), (y_lim_l, y_lim_h), 'k')
@@ -239,4 +248,4 @@ def plot_course(boat_pos        :np.ndarray,
     plt.show()
 
     if failed: raise err
-    return state.T
+    return state.T, inputs.T
