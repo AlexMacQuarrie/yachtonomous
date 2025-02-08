@@ -9,6 +9,16 @@ from tools import arr, draw_rectangle, sec2, saturate
 from config import settings
 
 
+def integrate_inputs(prev:arr, rate:arr, T:float, 
+                     max_eta:float, max_phi:float,
+                     sigma_w:list) -> arr:
+    ''' Integrate rate inputs to actual servo angle inputs, including noise '''
+    u_act = prev + (rate+np.asarray(sigma_w)*np.random.randn())*T
+    u_act[0] = saturate(u_act[0], max_eta)
+    u_act[1] = saturate(u_act[1], max_phi)
+    return u_act
+
+
 class boat:
     ''' Object to model, draw, and animate the boat '''
     def __init__(self, boat_config:settings, control_config:settings):

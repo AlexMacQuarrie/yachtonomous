@@ -2,7 +2,7 @@
 import numpy as np
 # Internal
 from config import parse_config
-from boat_model import boat
+from boat_model import boat, integrate_inputs
 from control import mpc
 from localization import ekf
 from sensor import get_measurements, wind_sensor
@@ -11,11 +11,7 @@ from plot import plot_results
 from tools import Angle, PlotCtrl, rk_four
 
 '''
-TODO
-- Add conversion from rate inputs/readings to angle inputs/readings (rad/s to rad). Maybe add plot (theta reading (x[2]), eta/phi inputs)
-
-If needed
-- Try dynamics (9 states, sensors/ekf change a bit)
+If needed, try dynamics (9 states, sensors/ekf change a bit)
 '''
 
 def simulate() -> None:
@@ -86,12 +82,14 @@ def simulate() -> None:
     x     = np.zeros((sailboat.num_states, N))
     x_hat = np.zeros((sailboat.num_states, N))
     u     = np.zeros((sailboat.num_inputs, N))
+    u_act = np.zeros((sailboat.num_inputs, N))
 
     # Initialize state, inputs, state estimate, state uncertainty
     x_hat[:, 0]    = x_hat_init
     x[:, 0]        = x_hat[:, 0] + np.random.randn()*np.asarray(noise_config.start_noise)
     P_hat[:, :, 0] = np.diag(np.power(noise_config.state_noise, 2))
     u[:, 0]        = control_config.init_inputs
+    u_act[:, 0]    = control_config.init_inputs
 
     # Run simulation
     for k in range(1, N):
@@ -102,17 +100,25 @@ def simulate() -> None:
                           boat_config.max_eta)
 
         # Take measurements 
-        z = get_measurements(x[:, k], test_config.exp_parms, noise_config.sensor_noise, f_map)
+        z = get_measurements(x[:, k], x_hat[:, k-1], u[:, k-1], sailboat.f, test_config.exp_parms, 
+                             noise_config.sensor_noise, f_map, test_config.T)
 
         # Use the measurements to estimate the robot's state
         x_hat[:, k], P_hat[:, :, k] = ekf(sailboat, test_config.exp_parms, test_config.T, 
                                           x_hat[:, k-1], P_hat[:, :, k-1], u[:, k-1], z, Q, R, f_map)
 
-        # Feedback control (steering rate)
+        # Feedback control (servo rates)
         u[:, k] = mpc(sailboat, control_config, test_config.T, x_d[:, k:], x_hat[:, k])
 
+        # Integrate to get actual servo inputs
+        u_act[:, k] = integrate_inputs(u_act[:, k-1], u[:, k], 
+                                       test_config.T, 
+                                       boat_config.max_eta,
+                                       boat_config.max_phi,
+                                       noise_config.input_noise)
+
     # Plot the results
-    plot_results(sailboat, t, N, test_config.T, f_map, x, x_hat, x_d, u, u_d, P_hat, 
+    plot_results(sailboat, t, N, test_config.T, f_map, x, x_hat, x_d, u, u_d, u_act, P_hat, 
                  test_config.pool_size, test_config.dest_pos)
 
 

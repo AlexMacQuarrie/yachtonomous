@@ -9,7 +9,7 @@ from tools import arr
 
 
 def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:arr, 
-                 x_d:arr, u:arr, u_d:arr, P_hat:arr, map_size:arr, dest_pos:arr) -> None:
+                 x_d:arr, u:arr, u_d:arr, u_act:arr, P_hat:arr, map_size:arr, dest_pos:arr) -> None:
     ''' Plot simulation results '''
     # Plot settings
     plt.rc('savefig', format='pdf')
@@ -76,9 +76,9 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:ar
     # Plot the states and inputs as a function of time
     fig2 = plt.figure(2)
     fig2.set_figheight(10.0)
-    ylabels_states = ['x [m]', 'y [m]', 'theta [deg]', 
-                      'gamma [deg]', 'phi [deg]', 'eta [deg]']
-    ylabels_inputs = ['sigma [deg/s]', 'omega [deg/s]']
+    ylabels_states = ['x [m]', 'y [m]', '\u03B8 [deg]', 
+                      '\u03B3 [deg]', '\u03C6 [deg]', '\u03B7 [deg]']
+    ylabels_inputs = ['\u03C3 [deg/s]', '\u03C9 [deg/s]']
     for i in range(vehicle.num_states):
         ax2 = plt.subplot(int(str(vehicle.num_states+vehicle.num_inputs)+'1'+str(i+1)))
         if 'deg' in ylabels_states[i]:
@@ -132,6 +132,34 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:ar
             plt.legend()
     plt.xlabel('t [s]')
     plt.savefig('outputs/boat_state_errors.pdf')
+
+    # Plot the integrated inputs
+    fig4 = plt.figure(4)
+    fig4.set_figheight(10.0)
+    ax4 = plt.subplot(411)
+    plt.step(t, u_act[0, :]*180.0/np.pi, 'C0'  , label='Actual')
+    plt.plot(t, x[5, :]    *180.0/np.pi, 'C2--', label='Desired')
+    plt.grid(color='0.95')
+    plt.ylabel(ylabels_states[5])
+    plt.setp(ax4, xticklabels=[])
+    plt.legend()
+    ax4 = plt.subplot(412)
+    plt.step(t, (u_act[0, :]-x[5, :])*180.0/np.pi, 'C0', label='Error')
+    plt.grid(color='0.95')
+    plt.ylabel('e_' + ylabels_states[5])
+    plt.setp(ax4, xticklabels=[])
+    ax4 = plt.subplot(413)
+    plt.step(t, u_act[1, :]*180.0/np.pi, 'C0'  , label='Actual')
+    plt.plot(t, x[4, :]    *180.0/np.pi, 'C2--', label='Desired')
+    plt.grid(color='0.95')
+    plt.ylabel(ylabels_states[4])
+    ax4 = plt.subplot(414)
+    plt.step(t, (u_act[1, :]-x[4, :])*180.0/np.pi, 'C0', label='Error')
+    plt.grid(color='0.95')
+    plt.ylabel('e_' + ylabels_states[4])
+    plt.setp(ax4, xticklabels=[])
+    plt.xlabel('t [s]')
+    plt.savefig('outputs/input_integration.pdf')
 
     # Animate & Save Gif
     vehicle.animate(x, x_d, x_hat, T, map_size, f_map, dest_pos, 
