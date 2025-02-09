@@ -11,7 +11,8 @@ from plot import plot_results
 from tools import Angle, PlotCtrl, rk_four
 
 '''
-If needed, try dynamics (9 states, sensors/ekf change a bit)
+If needed, try dynamics with 9 states (add acceleration for x, y, theta)
+    - Sensors/ekf change a bit (add un-integrated IMU, integrated acceleration for x_dot and y_dot)
 '''
 
 def simulate() -> None:
@@ -89,7 +90,7 @@ def simulate() -> None:
     x[:, 0]        = x_hat[:, 0] + np.random.randn()*np.asarray(noise_config.start_noise)
     P_hat[:, :, 0] = np.diag(np.power(noise_config.state_noise, 2))
     u[:, 0]        = control_config.init_inputs
-    u_act[:, 0]    = control_config.init_inputs
+    u_act[:, 0]    = (x_hat[5, 0], x_hat[4, 0])
 
     # Run simulation
     for k in range(1, N):
