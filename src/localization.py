@@ -1,6 +1,5 @@
 # External
 import numpy as np
-from typing import Tuple
 # Internal
 from boat_model import boat
 from sensor import range_sensor, get_distance
@@ -8,7 +7,7 @@ from tools import arr
 
 
 def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr, 
-        u:arr, z:arr, Q:arr, R:arr, f_map:arr) -> Tuple[arr, arr]:
+        u:arr, z:arr, Q:arr, R:arr, f_map:arr) -> arr:
     ''' Extended Kalman Filter for localization '''
     # Compute the Jacobian matrices
     num_states = len(x_hat)
@@ -23,9 +22,9 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
     # Linearize measurement model - Compute the Jacobian matrices
     num_features = f_map.shape[1]
     num_states   = len(x_hat)
-    exp_measures = range_sensor(x_hat, exp_parms, 0, f_map)
+    exp_measures = range_sensor(num_features)
     H = np.zeros((num_features+3, num_states))
-    for j in range(0, num_features):
+    for j in range(num_features):
         distance = get_distance(x_hat, f_map, j)
         H[j, :] = np.array(
             [
@@ -56,7 +55,7 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
 
     # Compute a posteriori state estimate
     z_hat = np.zeros(num_features+3)
-    z_hat[0:num_features] = range_sensor(x_new, exp_parms, 0, f_map)  # x, y
+    z_hat[0:num_features] = range_sensor(num_features)  # x, y
     z_hat[num_features]   = x_new[2]  # theta
     z_hat[num_features+1] = x_new[3]  # gamma
     z_hat[num_features+2] = x_new[5]  # eta

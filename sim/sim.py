@@ -11,8 +11,10 @@ from plot import plot_results
 from tools import Angle, PlotCtrl, rk_four
 
 '''
-If needed, try dynamics with 9 states (add acceleration for x, y, theta)
+If needed, try dynamics with 9 states (add speed for x, y, theta as states)
     - Sensors/ekf change a bit (add un-integrated IMU, integrated acceleration for x_dot and y_dot)
+    - Technically current EKF is wrong because IMU measures theta_dot, which is not a state
+        - Adding theta_dot as a state is ridiculously complicated in current form
 '''
 
 def simulate() -> None:
@@ -42,9 +44,9 @@ def simulate() -> None:
     angle_diff = np.abs(test_config.abs_wind_angle - np.pi/4.0)
     if angle_diff < boat_config.crit_wind_angle:
         if test_config.abs_wind_angle < np.pi/4.0:
-            init_theta_est = test_config.abs_wind_angle + boat_config.crit_wind_angle
+            init_theta_est = 3.0*np.pi/8.0
         else:
-            init_theta_est = test_config.abs_wind_angle - boat_config.crit_wind_angle
+            init_theta_est = np.pi/8.0
     else:
         init_theta_est = np.pi/4.0
 
@@ -70,7 +72,7 @@ def simulate() -> None:
         border_pad  = test_config.border_pad, 
         point_dist  = point_dist, 
         dest_thresh = test_config.dest_thresh*sailboat.length, 
-        max_length  = 5.0/point_dist, 
+        max_length  = 5//point_dist, 
         plot_ctrl   = PlotCtrl.ALWAYS
     )
 
