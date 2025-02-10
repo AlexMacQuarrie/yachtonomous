@@ -41,14 +41,14 @@ def simulate() -> None:
     Q = np.diag(np.power(noise_config.input_noise, 2))
 
     # Get initial theta estimate
-    angle_diff = np.abs(test_config.abs_wind_angle - np.pi/4.0)
+    angle_diff = np.abs(test_config.abs_wind_angle - test_config.theta_dest)
     if angle_diff < boat_config.crit_wind_angle:
-        if test_config.abs_wind_angle < np.pi/4.0:
-            init_theta_est = 3.0*np.pi/8.0
+        if test_config.abs_wind_angle < test_config.theta_dest:
+            init_theta_est = test_config.theta_dest + test_config.upwind_theta
         else:
-            init_theta_est = np.pi/8.0
+            init_theta_est = test_config.upwind_theta
     else:
-        init_theta_est = np.pi/4.0
+        init_theta_est = test_config.theta_dest
 
     # Get initial state estimate
     x_hat_init    = boat_config.est_start_pos

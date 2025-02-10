@@ -16,7 +16,7 @@ def plot_results(vehicle:boat, t:arr, N:int, T:float, f_map:arr, x:arr, x_hat:ar
     plt.rc('savefig', bbox='tight')
 
     # Find the scaling factor for plotting covariance bounds. 0.01 -> 99% Confidence Region
-    ALPHA = 0.01
+    ALPHA = 0.05
     s1    = chi2.isf(ALPHA, 1)
 
     # Wind arrow plotting

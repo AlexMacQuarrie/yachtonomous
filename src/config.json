@@ -28,6 +28,8 @@
         "dest_thresh"        : 1.0,
         "point_speed_factor" : 0.9,
         "num_wind_samples"   : 10,
+        "theta_dest_deg"     : 45,
+        "upwind_theta_deg"   : 22.5,
         "log_en"             : false
     },
 

@@ -46,11 +46,11 @@ def run() -> None:
 
     # Get initial theta estimate
     if np.abs(x_hat_init[3]) > boat_config.crit_wind_angle:
-        x_hat_init[2] = np.pi/4.0
+        x_hat_init[2] = test_config.theta_dest
     elif x_hat_init[3] < 0:
-        x_hat_init[2] = 3.0*np.pi/8.0
+        x_hat_init[2] = test_config.theta_dest + test_config.upwind_theta
     else:
-        x_hat_init[2] = np.pi/8.0
+        x_hat_init[2] = test_config.upwind_theta
 
     # Compute desired point distance given est. max possible boat speed
     point_speed = test_config.point_speed_factor*sailboat.max_speed(
