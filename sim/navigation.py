@@ -1,5 +1,4 @@
 # External
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Tuple
@@ -43,7 +42,7 @@ def plot_course(boat_pos        :arr,
                 ) -> Tuple[arr, arr]:
     ''' Plot course from start to destination '''
     # Check crit angle (relative to wind direction, which is relative to boat direction)
-    if not (math.radians(0) < crit_angle_wind.log < math.radians(90)):
+    if not (np.radians(0) < crit_angle_wind.log < np.radians(90)):
         raise NavigationError('Crit angle must be in (0, 90)')
 
     # Ensure point distance provides sufficient resoltion
@@ -102,7 +101,7 @@ def plot_course(boat_pos        :arr,
     # Plot course upwind or directly
     if not _is_upwind(path_angle, abs_wind_angle, crit_angle_wind):
         ### Direct trajectory
-        num_points = math.ceil(distance/point_dist)
+        num_points = np.ceil(distance/point_dist)
         for i in range(num_points):
             x_y = boat_pos + (i+1)*path_vector
             theta = Angle.exp(np.arctan2(path_vector[1], path_vector[0]))
@@ -165,11 +164,11 @@ def plot_course(boat_pos        :arr,
                 # Going past layline, tack and sail to destination
                 if not _is_upwind(angle_to_dest, abs_wind_angle, crit_angle_wind):
                     past_layline = True
-                    boat_vec     = boat_vec @ tack_matrix
+                    boat_vec     = np.dot(boat_vec, tack_matrix)
                     tack_matrix  = tack_matrix.transpose()
                 # Going out of set bounds, tack
                 elif _is_out_of_bounds(current_pos, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
-                    boat_vec    = boat_vec @ tack_matrix
+                    boat_vec    = np.dot(boat_vec, tack_matrix)
                     tack_matrix = tack_matrix.transpose()
 
             # Error out if we somehow fail to each the destination in a reasonable time

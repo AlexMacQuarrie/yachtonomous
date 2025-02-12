@@ -96,7 +96,7 @@ class boat:
     
     def max_speed(self, gamma:float, crit_angle:float) -> float:
         ''' Get max possible boat speed given rel wind angle '''
-        gamma = max(np.abs(gamma), crit_angle)
+        gamma = max(abs(gamma), crit_angle)
         return self.s*(self.a*gamma**4 + self.b*gamma**2 + self.c)
 
     def draw(self, x:float, y:float, theta:float, 

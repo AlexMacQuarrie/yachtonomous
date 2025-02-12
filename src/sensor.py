@@ -1,5 +1,8 @@
 # External
-import numpy as np
+try:
+    from ulab import numpy as np
+except ImportError:
+    import numpy as np
 # Internal
 from tools import arr
 
@@ -9,7 +12,7 @@ __SENSOR_READING_TODO__ = 0.1
 
 def range_sensor(num_features:int) -> arr:
     ''' Exponential range sensor function '''
-    z = np.zeros(num_features)
+    z = np.zeros(num_features, dtype=float)
     for j in range(num_features):
         z[j] = __SENSOR_READING_TODO__
     return z
@@ -32,7 +35,7 @@ def sail_sensor() -> float:
 
 def get_measurements(x_hat:arr, num_features:int, T:float) -> arr:
     ''' Get all sensor measurements '''
-    z = np.zeros(num_features+3)
+    z = np.zeros(num_features+3, dtype=float)
     z[0:num_features] = range_sensor(num_features)  # x, y
     z[num_features]   = rotation_sensor(x_hat, T)   # theta
     z[num_features+1] = wind_sensor()               # gamma

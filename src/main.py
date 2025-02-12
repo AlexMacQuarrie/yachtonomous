@@ -1,5 +1,8 @@
 # External
-import numpy as np
+try:
+    from ulab import numpy as np
+except ImportError:
+    import numpy as np
 # Internal
 from config import parse_config
 from boat_model import boat, integrate_inputs
@@ -26,18 +29,18 @@ def run() -> None:
 
     # Create the feature map of distance beacons
     num_features = 4
-    f_map        = np.zeros((2, num_features))
+    f_map        = np.zeros((2, num_features), dtype=float)
     f_map[:, 0]  = (0.0                     , 0.0                     )
     f_map[:, 1]  = (0.0                     , test_config.pool_size[1])
     f_map[:, 2]  = (test_config.pool_size[0], 0.0                     )
     f_map[:, 3]  = (test_config.pool_size[0], test_config.pool_size[1])
 
     # Sensor and process noise covariance matrices
-    R = np.zeros((num_features+3, num_features+3))
+    R = np.zeros((num_features+3, num_features+3), dtype=float)
     R[0:num_features, 0:num_features] = np.diag([noise_config.sensor_noise[0]**2]*num_features)
     for i in range(3):
         R[num_features+i, num_features+i] = noise_config.sensor_noise[i]**2
-    Q = np.diag(np.power(noise_config.input_noise, 2))
+    Q = np.diag(np.array(noise_config.input_noise, dtype=float)**2)
 
     # Get initial state estimate (except theta)
     x_hat_init = boat_config.est_start_pos
@@ -61,8 +64,8 @@ def run() -> None:
 
     # Get course to destination (desired state and inputs)
     x_d = plot_course(
-        np.asarray(x_hat_init[:2]), 
-        np.asarray(test_config.dest_pos),
+        np.asarray(x_hat_init[:2], dtype=float), 
+        np.asarray(test_config.dest_pos, dtype=float),
         Angle.exp(x_hat_init[3]), 
         Angle.exp(x_hat_init[2]), 
         Angle.exp(boat_config.crit_wind_angle), 
@@ -73,14 +76,14 @@ def run() -> None:
     )
     
     # Initialize inputs & states
-    P_hat = np.zeros((sailboat.num_states, sailboat.num_states))
-    x_hat = np.zeros(sailboat.num_states)
-    u     = np.zeros(sailboat.num_inputs)
-    u_act = np.zeros(sailboat.num_inputs)
+    P_hat = np.zeros((sailboat.num_states, sailboat.num_states), dtype=float)
+    x_hat = np.zeros(sailboat.num_states, dtype=float)
+    u     = np.zeros(sailboat.num_inputs, dtype=float)
+    u_act = np.zeros(sailboat.num_inputs, dtype=float)
 
     # Initialize state, inputs, state estimate, state uncertainty
     x_hat = x_hat_init
-    P_hat = np.diag(np.power(noise_config.state_noise, 2))
+    P_hat = np.diag(np.array(noise_config.state_noise, dtype=float)**2)
     u     = control_config.init_inputs
     u_act = [x_hat[5], x_hat[4]]
 

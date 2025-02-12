@@ -43,7 +43,7 @@ def simulate() -> None:
     # Get initial theta estimate
     theta_dest = np.arctan2(test_config.dest_pos[1]-boat_config.est_start_pos[1], 
                             test_config.dest_pos[0]-boat_config.est_start_pos[0])
-    angle_diff = np.abs(test_config.abs_wind_angle - theta_dest)
+    angle_diff = abs(test_config.abs_wind_angle - theta_dest)
     if angle_diff < boat_config.crit_wind_angle:
         if test_config.abs_wind_angle < np.pi/4.0:
             init_theta_est = np.pi/2.0
