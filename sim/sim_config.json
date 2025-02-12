@@ -27,9 +27,7 @@
         "exp_parms"          : [1.0, 1.0],
         "border_pad"         : 0.05,
         "dest_thresh"        : 1.0,
-        "point_speed_factor" : 0.9,
-        "theta_dest_deg"     : 45,
-        "upwind_theta_deg"   : 22.5
+        "point_speed_factor" : 0.9
     },
 
     "noise": {

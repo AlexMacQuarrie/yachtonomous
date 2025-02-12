@@ -215,8 +215,8 @@ class boat:
             # Add the simulation time
             time_text.set_text('t = %.1f s'%(k*T))
             # Set the axis limits 
-            ax.set_xbound(lower=-1, upper=3)
-            ax.set_ybound(lower=-1, upper=3)
+            ax.set_xbound(lower=-0.5, upper=map_size[0]+0.5)
+            ax.set_ybound(lower=-0.5, upper=map_size[1]+0.5)
             ax.figure.canvas.draw()
             # Return the objects to animate
             return line, estimated, desired, leftwheel, rightwheel, \
