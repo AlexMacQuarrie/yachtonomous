@@ -10,12 +10,6 @@ from navigation import plot_course
 from plot import plot_results
 from tools import Angle, PlotCtrl, rk_four
 
-'''
-If needed, try dynamics with 9 states (add speed for x, y, theta as states)
-    - Sensors/ekf change a bit (add un-integrated IMU, integrated acceleration for x_dot and y_dot)
-    - Technically current EKF is wrong because IMU measures theta_dot, which is not a state
-        - Adding theta_dot as a state is ridiculously complicated in current form
-'''
 
 def simulate() -> None:
     ''' Simulation Entrypoint '''
@@ -74,7 +68,7 @@ def simulate() -> None:
         border_pad  = test_config.border_pad, 
         point_dist  = point_dist, 
         dest_thresh = test_config.dest_thresh*sailboat.length, 
-        max_length  = 5//point_dist, 
+        max_length  = test_config.max_len_numerator//point_dist, 
         plot_ctrl   = PlotCtrl.ALWAYS
     )
 

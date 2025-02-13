@@ -1,8 +1,5 @@
 # External
-try:
-    from ulab import numpy as np
-except ImportError:
-    import numpy as np
+import numpy as np
 # Internal
 from tools import Angle, arr
 
@@ -89,15 +86,14 @@ def plot_course(boat_pos        :arr,
         tack_angle = crit_angle_wind + crit_angle_wind
         tack_matrix = np.array(
             ((tack_angle.cos, -tack_angle.sin), 
-             (tack_angle.sin,  tack_angle.cos)),
-            dtype=float
+             (tack_angle.sin,  tack_angle.cos))
         )
         
         # Get initial upwind path vector
         # Selects the tack that is closer to the boat's initial heading
-        boat_vec  = point_dist*np.array((left_crit.cos , left_crit.sin ), dtype=float)
-        other_vec = point_dist*np.array((crit_angle.cos, crit_angle.sin), dtype=float)
-        boat_angle_vec = np.array((boat_angle.cos, boat_angle.sin), dtype=float)
+        boat_vec  = point_dist*np.array((left_crit.cos , left_crit.sin ))
+        other_vec = point_dist*np.array((crit_angle.cos, crit_angle.sin))
+        boat_angle_vec = np.array((boat_angle.cos, boat_angle.sin))
         if np.dot(boat_angle_vec, other_vec) > np.dot(boat_angle_vec, boat_vec):
             boat_vec, other_vec = other_vec, boat_vec
             tack_matrix         = tack_matrix.transpose()
@@ -133,11 +129,11 @@ def plot_course(boat_pos        :arr,
                 # Going past layline, tack and sail to destination
                 if not _is_upwind(angle_to_dest, abs_wind_angle, crit_angle_wind):
                     past_layline = True
-                    boat_vec     = np.dot(boat_vec, tack_matrix)
+                    boat_vec     = boat_vec @ tack_matrix
                     tack_matrix  = tack_matrix.transpose()
                 # Going out of set bounds, tack
                 elif _is_out_of_bounds(current_pos, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
-                    boat_vec    = np.dot(boat_vec, tack_matrix)
+                    boat_vec    = boat_vec @ tack_matrix
                     tack_matrix = tack_matrix.transpose()
 
             # Error out if we somehow fail to each the destination in a reasonable time
@@ -151,4 +147,4 @@ def plot_course(boat_pos        :arr,
             state.append((x_y[0], x_y[1], theta.log, gamma.log, 0.0, gamma.log/2.0))
 
     # Convert to np array now that size is fixed
-    return np.asarray(state, dtype=float).T
+    return np.asarray(state).T

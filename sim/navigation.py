@@ -164,11 +164,11 @@ def plot_course(boat_pos        :arr,
                 # Going past layline, tack and sail to destination
                 if not _is_upwind(angle_to_dest, abs_wind_angle, crit_angle_wind):
                     past_layline = True
-                    boat_vec     = np.dot(boat_vec, tack_matrix)
+                    boat_vec     = boat_vec @ tack_matrix
                     tack_matrix  = tack_matrix.transpose()
                 # Going out of set bounds, tack
                 elif _is_out_of_bounds(current_pos, boat_vec, x_lim_l, x_lim_h, y_lim_l, y_lim_h):
-                    boat_vec    = np.dot(boat_vec, tack_matrix)
+                    boat_vec    = boat_vec @ tack_matrix
                     tack_matrix = tack_matrix.transpose()
 
             # Error out if we somehow fail to each the destination in a reasonable time

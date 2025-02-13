@@ -27,8 +27,10 @@
         "border_pad"         : 0.05,
         "dest_thresh"        : 1.0,
         "point_speed_factor" : 0.9,
+        "max_len_numerator"  : 5,
         "num_wind_samples"   : 10,
-        "log_en"             : false
+        "log_en"             : true,
+        "log_file_name"      : "boat_log.csv"
     },
 
     "noise": {

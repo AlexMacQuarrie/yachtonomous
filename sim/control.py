@@ -2,7 +2,7 @@
 import numpy as np
 # Internal
 from boat_model import boat
-from tools import arr, saturate, kron, matrix_power
+from tools import arr, saturate
 from config import settings
 
 
@@ -12,8 +12,8 @@ def mpc(sailboat:boat, control_config:settings, T:float, x_d:arr, x_hat:arr) -> 
     p = min(control_config.max_pred_horz, x_d.shape[1])
 
     # Initialize state error and control effort weight matrices
-    Q = kron(np.eye(p), np.diag(control_config.state_weights))
-    R = kron(np.eye(p), np.diag(control_config.input_weights))
+    Q = np.kron(np.eye(p), np.diag(control_config.state_weights))
+    R = np.kron(np.eye(p), np.diag(control_config.input_weights))
 
     # Empty L & M matrices
     n, m = sailboat.num_states, sailboat.num_inputs
@@ -28,16 +28,16 @@ def mpc(sailboat:boat, control_config:settings, T:float, x_d:arr, x_hat:arr) -> 
         G = sailboat.G(T)
 
         # Compute L and M
-        L[n*i:n*i+n, 0:n] = matrix_power(F, i+1)
+        L[n*i:n*i+n, 0:n] = np.linalg.matrix_power(F, i+1)
         for j in range(p-i):
-            M[n*(p-i)-n:n*(p-i), m*j:m*(j+1)] = np.dot(matrix_power(F, p-i-j-1), G)
+            M[n*(p-i)-n:n*(p-i), m*j:m*(j+1)] = np.linalg.matrix_power(F, p-i-j-1) @ G
 
         # Concatenated desired state
         x_d_cat[n*i:n*i+n] = x_d[:, i]
 
     # Compute optimal control inputs
-    K = np.dot(np.dot(np.linalg.inv(np.dot(np.dot(M.T, Q), M) + R), M.T), Q) 
-    u = np.dot(K, (x_d_cat - np.dot(L, x_hat)))
+    K = np.linalg.inv(M.T @ Q @ M + R) @ M.T @ Q 
+    u = K @ (x_d_cat - L @ x_hat)
 
     # Take first inputs
     u = u[:m]

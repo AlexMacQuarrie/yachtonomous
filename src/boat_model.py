@@ -1,8 +1,5 @@
 # External
-try:
-    from ulab import numpy as np
-except ImportError:
-    import numpy as np
+import numpy as np
 # Internal
 from tools import arr, sec2, saturate
 from config import settings
@@ -32,7 +29,7 @@ class boat:
 
     def f(self, x:arr, u:arr) -> arr:
         ''' Kinematic model, x_dot = A(q) + B*u '''
-        f = np.zeros(self.num_states, dtype=float)
+        f = np.zeros(self.num_states)
         f[0] =  self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.cos(x[2])              # x
         f[1] =  self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.sin(x[2])              # y
         f[2] = -self.s*np.cos(2*x[5]-x[3])*(self.a*x[3]**4 + self.b*x[3]**2 + self.c)*np.tan(x[4])/self.length  # theta
@@ -67,8 +64,7 @@ class boat:
                 [0, 0, 0,     dg_dg, dg_dp, dg_de],
                 [0, 0, 0,     0,     0,     0    ],
                 [0, 0, 0,     0,     0,     0    ],
-            ],
-            dtype=float
+            ]
         )
 
     def B(self) -> arr:
@@ -81,13 +77,12 @@ class boat:
                 [0, 0],
                 [0, 1],
                 [1, 0],
-            ],
-            dtype=float
+            ]
         )
 
     def F(self, T:float, x:arr) -> arr:
         ''' Discretization of A via Euler integration '''
-        return np.eye(self.num_states, dtype=float) + T*self.A(x)
+        return np.eye(self.num_states) + T*self.A(x)
 
     def G(self, T:float) -> arr:
         ''' Discretization of B via Euler integration '''

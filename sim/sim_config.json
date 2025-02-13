@@ -27,7 +27,8 @@
         "exp_parms"          : [1.0, 1.0],
         "border_pad"         : 0.05,
         "dest_thresh"        : 1.0,
-        "point_speed_factor" : 0.9
+        "point_speed_factor" : 0.9,
+        "max_len_numerator"  : 5
     },
 
     "noise": {
