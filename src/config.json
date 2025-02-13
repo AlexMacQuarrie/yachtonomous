@@ -30,7 +30,7 @@
         "max_len_numerator"  : 5,
         "num_wind_samples"   : 10,
         "log_en"             : true,
-        "log_file_name"      : "boat_log.csv"
+        "log_file_name"      : "results/boat_log.csv"
     },
 
     "noise": {

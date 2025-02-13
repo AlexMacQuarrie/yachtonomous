@@ -17,3 +17,4 @@ Faculty Supervisor:
 - src - Source code for the boat (MicroPython)
 - sim - Simulation code for the boat (Python)
 - docs - Project documentation (Text files for mermaid charts)
+- firmware - Raspberry Pi Pico W Firmware (MicroPython and ulab)
