@@ -33,7 +33,7 @@ def run() -> None:
     R[0:num_features, 0:num_features] = np.diag([noise_config.sensor_noise[0]**2]*num_features)
     for i in range(3):
         R[num_features+i, num_features+i] = noise_config.sensor_noise[i]**2
-    Q = np.diag(np.array(noise_config.input_noise)**2)
+    Q = np.diag(noise_config.input_noise**2)
 
     # Get initial state estimate (except theta)
     x_hat_init = boat_config.est_start_pos
@@ -100,5 +100,5 @@ def run() -> None:
         # Log results for debug
         logger.log_results(x_hat, x_d[:, k], u, u_act, k*test_config.T)
 
-    # Print final log message
+    # Close logger
     logger.end()

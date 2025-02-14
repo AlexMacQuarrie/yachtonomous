@@ -9,7 +9,7 @@ def range_sensor(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
     ''' Exponential range sensor function '''
     # Compute the measured range to each feature from the current robot position
     num_features = f_map.shape[1]
-    z = np.zeros(num_features)
+    z = np.empty(num_features)
     for j in range(num_features):
         r     = get_distance(x, f_map, j)
         z[j]  = exp_parms[0]*np.exp(-exp_parms[1]*r)
@@ -41,7 +41,7 @@ def get_measurements(x:arr, x_hat:arr, u:arr, f:Callable, exp_parms:list,
                      sigma_w:float, f_map:arr, T:float) -> arr:
     ''' Get all sensor measurements '''
     num_features = f_map.shape[1]
-    z = np.zeros(num_features+3)
+    z = np.empty(num_features+3)
     z[0:num_features] = range_sensor(x, exp_parms, sigma_w[0], f_map)   # x, y
     z[num_features]   = rotation_sensor(x_hat, sigma_w[1], f(x, u), T)  # theta
     z[num_features+1] = wind_sensor(x, sigma_w[2])                      # gamma

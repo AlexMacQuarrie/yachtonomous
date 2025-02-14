@@ -85,7 +85,7 @@ def simulate() -> None:
 
     # Initialize state, inputs, state estimate, state uncertainty
     x_hat[:, 0]    = x_hat_init
-    x[:, 0]        = x_hat[:, 0] + np.random.randn()*np.asarray(noise_config.start_noise)
+    x[:, 0]        = x_hat[:, 0] + np.random.randn()*noise_config.start_noise
     P_hat[:, :, 0] = np.diag(np.power(noise_config.state_noise, 2))
     u[:, 0]        = control_config.init_inputs
     u_act[:, 0]    = (x_hat[5, 0], x_hat[4, 0])

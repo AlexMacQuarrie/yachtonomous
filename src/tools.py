@@ -47,11 +47,6 @@ class Angle:
 
     def __repr__(self) -> str:
         return '%.2f'%(np.degrees(self.log))
-    
-
-def saturate(u:float, sat_limit:float) -> float:
-    ''' Clamp inputs to within given limits '''
-    return max(u, -sat_limit) if u < 0 else min(u, sat_limit)
 
 
 def sec2(x:float) -> float:

@@ -1,5 +1,6 @@
 # External
 import json
+import numpy as np
 from typing import Tuple
 # Internal
 from tools import Angle
@@ -20,6 +21,10 @@ class settings:
                     value = [Angle.exp(val, deg=True).log for val in value]
                 else:
                     value = Angle.exp(value, deg=True).log
+
+            # Convert any lists to np arrays
+            if isinstance(value, list):
+                value = np.asarray(value)
 
             setattr(self, key, value)
 

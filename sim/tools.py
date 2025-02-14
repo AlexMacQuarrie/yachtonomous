@@ -57,11 +57,6 @@ class Angle:
 
     def __repr__(self) -> str:
         return '%.2f'%(np.degrees(self.log))
-    
-
-def saturate(u:float, sat_limit:float) -> float:
-    ''' Clamp inputs to within given limits '''
-    return max(u, -sat_limit) if u < 0 else min(u, sat_limit)
 
 
 def sec2(x:float) -> float:
@@ -78,8 +73,8 @@ def rk_four(f:Callable, x:arr, u:arr, T:float,
     k_4 = f(x + T*k_3, u)
     x_new = x + T*(k_1 + 2.0*k_2 + 2.0*k_3 + k_4)/6.0
     # Ensure rudder/sail do not exceed max angle
-    x_new[4] = saturate(x_new[4], max_phi)
-    x_new[5] = saturate(x_new[5], max_eta)
+    x_new[4] = np.clip(x_new[4], -max_phi, max_phi)
+    x_new[5] = np.clip(x_new[5], -max_eta, max_eta)
     return x_new
 
 
