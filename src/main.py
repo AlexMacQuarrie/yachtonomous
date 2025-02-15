@@ -3,7 +3,6 @@ from yachtonomous import run
 
 '''
 TODO - Board only
-- Make MPC M faster, EKF inverse faster
 - Wifi stuff (fake sensor read & actuator inputs on board)
 - Ensure T is being used right (force constant or update dynamically)
 

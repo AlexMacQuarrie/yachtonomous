@@ -1,6 +1,7 @@
 # External
 import numpy as np
 import scipy
+from functools import reduce
 # Internal
 from boat_model import boat
 from tools import arr
@@ -19,16 +20,18 @@ def mpc(sailboat:boat, control_config:settings, T:float, x_d:arr, x_hat:arr) -> 
 
     # Compute all discrete time approximate linearizations
     F_stack = [sailboat.F(T, x_d[:, i]) for i in range(p)]
-    G       = sailboat.G(T)
+    G       =  sailboat.G(T)
 
     # Compute L
     L = np.vstack([np.linalg.matrix_power(F_stack[i], i+1) for i in range(p)])
 
+    # Compute powers of F for M sequentially
+    F_powers = np.array([reduce(np.matmul, F_stack[:i], np.eye(n)) for i in range(p)])    
+
     # Compute M
     M = np.zeros((n*p, m*p))
-    for i in range(p):
-        for j in range(p-i):
-            M[n*(p-i)-n:n*(p-i), m*j:m*(j+1)] = np.linalg.matrix_power(F_stack[p-i-1], p-i-j-1) @ G
+    for i, j in zip(*np.tril_indices(p)):
+        M[n*i:n*(i+1), m*j:m*(j+1)] = F_powers[p-i-1-j] @ G
 
     # Compute optimal control inputs
     K = scipy.linalg.solve(M.T @ Q @ M + R, M.T @ Q, assume_a='pos')

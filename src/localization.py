@@ -1,5 +1,6 @@
 # External
 import numpy as np
+import scipy
 # Internal
 from boat_model import boat
 from sensor import range_sensor, get_distance
@@ -15,7 +16,7 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
 
     # Compute the a priori estimate (dead reckoning)
     P_new = F @ P @ F.T + G @ Q @ G.T
-    P_new = 0.5*(P_new + P_new.T)  # Numerically help symmetry
+    P_new = np.tril(P_new) + np.triu(P_new.T, 1)  # Symmetry
     x_new = x_hat + T*sailboat.f(x_hat, u)
 
     # Linearize measurement model - Compute the Jacobian matrices
@@ -40,7 +41,7 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
     H[num_features+2, :] = np.array([0, 0, 0, 0, 0, 1])
 
     # Compute the Kalman gain
-    K = P_new @ H.T @ np.linalg.inv(H @ P_new @ H.T + R)
+    K = scipy.linalg.solve(H @ P_new @ H.T + R, H @ P_new).T
 
     # Compute a posteriori state estimate
     z_hat = np.zeros(num_features+3)
@@ -53,7 +54,7 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
     # Compute a posteriori covariance
     I_KH  = np.eye(sailboat.num_states) - K @ H
     P_new = I_KH @ P_new @ I_KH.T + K @ R @ K.T
-    P_new = 0.5*(P_new + P_new.T)  # Numerically help symmetry
+    P_new = np.tril(P_new) + np.triu(P_new.T, 1)  # Symmetry
 
     # Return the estimated state and covariance
     return x_new, P_new
