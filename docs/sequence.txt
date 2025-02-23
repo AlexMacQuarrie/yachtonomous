@@ -1,0 +1,51 @@
+%% Yachtonomous sequence diagram
+
+sequenceDiagram
+    participant User
+    participant PC
+    participant RPi
+    participant HW
+    participant ESP32
+
+    Note over User, ESP32: Initialize
+    User ->> RPi: Power On
+    RPi ->> RPi: Start Wifi network
+    RPi ->> ESP32: Power On Server
+    User ->> ESP32: Power On Clients
+    User ->> PC: Connect PC to RPi Wifi
+    User ->> PC: python main.py
+    loop Until ack
+        PC ->> RPi: Send Ack Req
+        RPi ->> PC: Ack
+    end
+
+    Note over User, ESP32: Setup
+    PC ->> PC: Parse config, create some objects
+    PC ->> RPi: Read wind sensor (avg)
+    RPi ->> PC: Return avg wind direction
+    PC ->> PC: Estimate initial state, do navigation
+    PC ->> PC: Create remaining objects
+
+    Note over User, ESP32: Main Loop
+    loop for N points:
+        PC ->> RPi: Get measurements
+        RPi ->> HW: Read IMU, 2x rotation sensor
+        HW ->> RPi: Return measurements
+        RPi ->> ESP32: Read serialized RSSI
+        ESP32 ->> RPi: Return serialized RSSI
+        RPi ->> RPi: Deserialize RSSI
+        RPi ->> PC: Return measurements
+        PC ->> PC: EKF, return x_hat, P_hat
+        PC ->> PC: MPC, return u
+        PC ->> PC: Integrate u to u_act
+        PC ->> RPi: Send servo inputs
+        RPi ->> HW: Actuate servos
+        HW ->> RPi: Done
+        RPi ->> PC: Actuation complete
+    end
+
+    Note over User, ESP32: Cleanup
+    PC ->> User: main.py done, Report complete
+    User ->> RPi: Power Off
+    RPi ->> ESP32: Power Off Server
+    User ->> ESP32: Power Off Clients

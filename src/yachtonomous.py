@@ -6,6 +6,7 @@ from boat_model import boat, integrate_inputs
 from control import mpc
 from localization import ekf
 from sensor import get_measurements, wind_sensor
+from actuator import send_inputs
 from navigation import plot_course
 from boat_logging import boat_logger
 from tools import Angle
@@ -96,6 +97,9 @@ def run() -> None:
 
         # Integrate to get actual servo inputs (angles)
         u_act = integrate_inputs(u_act, u, test_config.T, boat_config.max_eta, boat_config.max_phi)
+
+        # Send inputs to actuators
+        send_inputs(u_act)
 
         # Log results for debug
         logger.log_results(x_hat, x_d[:, k], u, u_act, k*test_config.T)

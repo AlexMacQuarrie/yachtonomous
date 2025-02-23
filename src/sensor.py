@@ -7,12 +7,30 @@ from tools import arr
 __SENSOR_READING_TODO__ = 0.1
 
 
+def _parse_serialized_rssi(serialized_rssi:int) -> int:
+    cli_id = serialized_rssi//1000
+    rssi   = serialized_rssi %1000  # Assumes positive, if negative, use -1000
+    return cli_id, rssi
+
+
+def _get_updated_rssi_values(num_features:int) -> arr:
+    rssi_list = np.zeros(num_features)
+    # Keep reading RSSI values until we get a value from each client
+    while not np.all(rssi_list != 0):
+        serialized_rssi   = __SENSOR_READING_TODO__
+        cli_id, rssi      = _parse_serialized_rssi(serialized_rssi)
+        rssi_list[cli_id] = rssi
+
+    return rssi_list
+
+
 def range_sensor(num_features:int) -> arr:
-    ''' Exponential range sensor function '''
-    z = np.zeros(num_features)
-    for j in range(num_features):
-        z[j] = __SENSOR_READING_TODO__
-    return z
+    ''' 
+        Exponential range sensor function.
+        Gets ranges as RSSI values, which we assume
+        are of the form a*e^(b*r) + c, where r is range.
+    '''
+    return _get_updated_rssi_values(num_features)
 
 
 def rotation_sensor(x_hat:arr, T:float) -> float:

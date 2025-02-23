@@ -4,12 +4,12 @@ from yachtonomous import run
 '''
 TODO - Board only
 - Wifi stuff (fake sensor read & actuator inputs on board)
-- Ensure T is being used right (force constant or update dynamically)
+- Update T dynamically
 
 TODO - With PCB
-- Actual sensor readings
-- Servo outputs
-- Updating sample time stuff
+- Drivers (LED, Switch, Power, Servo, IMU, Wind Sensor, Sail Sensor, ADC, Bluetooth)
+- Actual sensor readings (BT, IMU, 2x Rotation)
+- Servo outputs (Sail, rudder)
 - Update config values
 '''
 

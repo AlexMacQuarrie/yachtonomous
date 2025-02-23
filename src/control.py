@@ -8,7 +8,7 @@ from tools import arr
 from config import settings
 
 
-def mpc(sailboat:boat, control_config:settings, T:float, x_d:arr, x_hat:arr) -> float:
+def mpc(sailboat:boat, control_config:settings, T:float, x_d:arr, x_hat:arr) -> arr:
     ''' Model Predictive Control for feedback control '''
     # Prediction horizon
     p    = min(control_config.max_pred_horz, x_d.shape[1])
