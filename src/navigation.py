@@ -70,7 +70,7 @@ def plot_course(boat_pos        :arr,
     # Plot course upwind or directly
     if not _is_upwind(path_angle, abs_wind_angle, crit_angle_wind):
         ### Direct trajectory
-        num_points = np.ceil(distance/point_dist)
+        num_points = int(np.ceil(distance/point_dist))
         for i in range(num_points):
             x_y   = boat_pos + (i+1)*path_vector
             theta = Angle.exp(np.arctan2(path_vector[1], path_vector[0]))

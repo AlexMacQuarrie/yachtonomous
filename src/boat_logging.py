@@ -8,6 +8,7 @@ class boat_logger:
         self.__file_name = log_file_name
 
         if self.__log_en:
+            print('Open logger')
             self.__log_file = open(self.__file_name, 'w')
             self.__write('x_x,x_y,x_t,x_g,x_p,x_e,'
                          'x_d_x,x_d_y,x_d_t,x_d_g,x_d_p,x_d_e,'
@@ -17,6 +18,7 @@ class boat_logger:
     def end(self) -> None:
         ''' Close the log file when logging is done '''
         if self.__log_en:
+            print('Logger closed')
             self.__log_file.close()
 
     def log_results(self, x_hat: arr, x_d: arr, u: arr, u_act: arr, t: float) -> None:

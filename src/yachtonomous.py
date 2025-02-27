@@ -1,25 +1,31 @@
 # External
 import numpy as np
+import time
 # Internal
 from config import parse_config
 from boat_model import boat, integrate_inputs
 from control import mpc
 from localization import ekf
-from sensor import get_measurements, wind_sensor
-from actuator import send_inputs
 from navigation import plot_course
 from boat_logging import boat_logger
+from pc_comms import udp_socket
 from tools import Angle
 
+'''
+TODO - With PCB
+- Drivers (LEDs, Servos, ADC, Bluetooth, IMU, Sail Sensor, Wind Sensor)
+- Update config values
+'''
 
 def run() -> None:
     ''' Simulation Entrypoint '''
     # Parse the simulation config
     control_config, boat_config, test_config, noise_config = parse_config()
 
-    # Create sailboat & logger
-    sailboat = boat(boat_config, control_config)
-    logger   = boat_logger(test_config.log_en, test_config.log_file_name)
+    # Create sailboat, logger, socket
+    sailboat    = boat(boat_config, control_config)
+    logger      = boat_logger(test_config.log_en, test_config.log_file_name)
+    pico_socket = udp_socket(test_config.log_en, test_config.socket_timeout_s)
 
     # Create the feature map of distance beacons
     num_features = 4
@@ -36,10 +42,9 @@ def run() -> None:
         R[num_features+i, num_features+i] = noise_config.sensor_noise[i]**2
     Q = np.diag(noise_config.input_noise**2)
 
-    # Get initial state estimate (except theta)
-    x_hat_init = boat_config.est_start_pos
-    for _ in range(test_config.num_wind_samples):
-        x_hat_init[3] += wind_sensor()/float(test_config.num_wind_samples)
+    # Get initial state estimate (except theta, which depends on initial gamma est)
+    x_hat_init    = boat_config.est_start_pos
+    x_hat_init[3] = pico_socket.get_init_wind()
 
     # Get initial theta estimate
     if abs(x_hat_init[3]) > boat_config.crit_wind_angle:
@@ -84,25 +89,50 @@ def run() -> None:
     # Log initial results
     logger.log_results(x_hat, x_d[:, 0], u, u_act, 0.0)
 
+    # Set initial T
+    T = test_config.T
+    if test_config.measure_T:
+        times    = np.zeros(x_d.shape[1])
+        times[0] = test_config.T
+
     # Run simulation
     for k in range(1, x_d.shape[1]):
-        # Take measurements 
-        z = get_measurements(x_hat, num_features, test_config.T)
+        # Get start time for dynamic T
+        start_time = time.time()
+
+        # Get measurements from Pico
+        z = pico_socket.get_measurements(x_hat[2], num_features, T)
 
         # Use the measurements to estimate the boat's state
-        x_hat, P_hat = ekf(sailboat, test_config.exp_parms, test_config.T, x_hat, P_hat, u, z, Q, R, f_map)
+        x_hat, P_hat = ekf(sailboat, test_config.exp_parms, T, x_hat, P_hat, u, z, Q, R, f_map)
 
         # Feedback control (servo rates)
-        u = mpc(sailboat, control_config, test_config.T, x_d[:, k:], x_hat)
+        u = mpc(sailboat, control_config, T, x_d[:, k:], x_hat)
 
         # Integrate to get actual servo inputs (angles)
-        u_act = integrate_inputs(u_act, u, test_config.T, boat_config.max_eta, boat_config.max_phi)
+        u_act = integrate_inputs(u_act, u, T, boat_config.max_eta, boat_config.max_phi)
 
-        # Send inputs to actuators
-        send_inputs(u_act)
+        # Send inputs to actuators via Pico
+        pico_socket.send_actuator_inputs(u_act)
 
         # Log results for debug
-        logger.log_results(x_hat, x_d[:, k], u, u_act, k*test_config.T)
+        logger.log_results(x_hat, x_d[:, k], u, u_act, k*T)
 
-    # Close logger
+        # Wait to not overwhelm server
+        time.sleep(test_config.wait_time_s)
+
+        # Measure T
+        T = time.time() - start_time
+        if test_config.measure_T:
+            times[k] = T
+
+    if test_config.measure_T:
+        print('Mean T =', np.mean(times))
+
+    # Close logger & end RPi program
+    pico_socket.close()
     logger.end()
+
+
+if __name__ == '__main__':
+    run()

@@ -11,16 +11,16 @@
         "num_states_inputs"    : [6, 2],
         "est_start_pos"        : [0.35, 0.35, null, 0.0, 0.0, 0.0],
         "gamma_coeffs"         : [-0.018072, 0.205949, 0.405128],
-        "length"               : 0.125,
-        "width"                : 0.22,
+        "length"               : 0.085,
+        "width"                : 0.219,
         "crit_wind_angle_deg"  : 45,
-        "max_phi_deg"          : 50,
-        "max_eta_deg"          : 95,
+        "max_phi_deg"          : 45,
+        "max_eta_deg"          : 90,
         "speed"                : 0.1
     },
 
     "test": {
-        "T"                  : 0.05,
+        "T"                  : 0.02,
         "pool_size"          : [2.0, 2.0],
         "dest_pos"           : [1.65, 1.65],
         "exp_parms"          : [1.0, 1.0],
@@ -28,9 +28,11 @@
         "dest_thresh"        : 1.0,
         "point_speed_factor" : 0.9,
         "max_len_numerator"  : 5,
-        "num_wind_samples"   : 10,
-        "log_en"             : true,
-        "log_file_name"      : "results/boat_log.csv"
+        "log_en"             : false,
+        "log_file_name"      : "results/boat_log.csv",
+        "socket_timeout_s"   : 0.005,
+        "wait_time_s"        : 0.005,
+        "measure_T"          : false
     },
 
     "noise": {

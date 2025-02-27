@@ -3,8 +3,18 @@ import numpy as np
 import scipy
 # Internal
 from boat_model import boat
-from sensor import range_sensor, get_distance
 from tools import arr
+
+
+def range_sensor_func(x_hat:arr, exp_parms:list, f_map:arr) -> arr:
+    ''' Exponential range sensor function for EKF estimate '''
+    # Compute the measured range to each feature from the current robot position
+    num_features = f_map.shape[1]
+    z, dists     = np.empty(num_features), np.empty(num_features)
+    for j in range(num_features):
+        dists[j] = np.sqrt((x_hat[0]-f_map[0, j])**2 + (x_hat[1]-f_map[1, j])**2)
+        z[j]     = exp_parms[0]*np.exp(-exp_parms[1]*dists[j])
+    return z, dists
 
 
 def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr, 
@@ -20,15 +30,14 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
     x_new = x_hat + T*sailboat.f(x_hat, u)
 
     # Linearize measurement model - Compute the Jacobian matrices
-    num_features = f_map.shape[1]
-    exp_measures = range_sensor(num_features)
+    num_features        = f_map.shape[1]
+    exp_measures, dists = range_sensor_func(x_hat, exp_parms, f_map)
     H = np.zeros((num_features+3, sailboat.num_states))
     for j in range(num_features):
-        distance = get_distance(x_hat, f_map, j)
         H[j, :] = np.array(
             [
-                -exp_parms[1]*exp_measures[j]*(x_hat[0] - f_map[0, j])/distance,
-                -exp_parms[1]*exp_measures[j]*(x_hat[1] - f_map[1, j])/distance,
+                -exp_parms[1]*exp_measures[j]*(x_hat[0] - f_map[0, j])/dists[j],
+                -exp_parms[1]*exp_measures[j]*(x_hat[1] - f_map[1, j])/dists[j],
                 0,
                 0,
                 0,
