@@ -12,8 +12,11 @@ from pc_comms import udp_socket
 from tools import Angle
 
 '''
+TODO
+- Unconnected Drivers (LEDs, IMU, ADC)
+
 TODO - With PCB
-- Drivers (LEDs, Servos, ADC, Bluetooth, IMU, Sail Sensor, Wind Sensor)
+- Connected Drivers (Servos, Bluetooth, Sail Sensor, Wind Sensor)
 - Update config values
 '''
 

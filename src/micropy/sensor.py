@@ -2,7 +2,7 @@
 from micropython import const
 
 
-# Fake sensor reading while I only have board
+# TODO - START: Fake sensor reading while I only have board -------------------
 __TODO__ = 0.5
 
 class fake_rssi:
@@ -16,6 +16,7 @@ class fake_rssi:
         return rssi
 
 rssi_gen = fake_rssi()
+# TODO - END ------------------------------------------------------------------
 
 
 # Consts

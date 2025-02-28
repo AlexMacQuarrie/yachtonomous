@@ -6,7 +6,7 @@
 #define INTEGER_CHAR_UUID "12345678-1234-1234-1234-1234567890ab"  // UUID for the integer characteristic
 
 // Timing consts
-const int delayMs = 2000;
+const int delayMs = 1000;
 
 // Declare pointers
 BLEServer* pServer;
