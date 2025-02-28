@@ -13,10 +13,7 @@ from tools import Angle
 
 '''
 TODO
-- Unconnected Drivers (LEDs, IMU, ADC)
-
-TODO - With PCB
-- Connected Drivers (Servos, Bluetooth, Sail Sensor, Wind Sensor)
+- Drivers (LEDs, IMU, ADC, Servos, Sail Sensor, Wind Sensor, Bluetooth)
 - Update config values
 '''
 

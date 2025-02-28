@@ -11,8 +11,8 @@
 #define SERVER_MAC_ADDRESS "24:ec:4a:c9:97:12"
 
 // Client ID consts
-const str cliID = "3";
-const str cliName = "ESP32C3_Client_3";
+const String cliID = "3";
+const String cliName = "ESP32C3_Client_3";
 
 // Timing consts
 const int delayMs = 5;
