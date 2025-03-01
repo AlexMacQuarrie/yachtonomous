@@ -13,7 +13,7 @@ from tools import Angle
 
 '''
 TODO
-- Drivers (Servos, IMU, Sail Sensor, Wind Sensor, Bluetooth)
+- Drivers (Servos, Wind sensor, Sail sensor, IMU)
 - Update config values
 '''
 

@@ -16,6 +16,25 @@ class fake_rssi:
         return rssi
 
 rssi_gen = fake_rssi()
+
+
+def _get_updated_rssi_values() -> list:
+    ''' Read RSSI from pin until we get a new RSSI from all clients '''
+
+    def _parse_serialized_rssi(serialized_rssi:int) -> int:
+        ''' Deserialized RSSI to original form '''
+        cli_id = serialized_rssi//1000
+        rssi   = serialized_rssi %1000  # Assumes positive, if negative, use -1000
+        # NOTE: May want rssi = -1*rssi depending on curve fit
+        return cli_id, rssi
+
+    rssi_list = [0]*NUM_BEACONS
+    # Keep reading RSSI values until we get a value from each client
+    while 0 in rssi_list:
+        serialized_rssi   = rssi_gen.get()  # TODO
+        cli_id, rssi      = _parse_serialized_rssi(serialized_rssi)
+        rssi_list[cli_id] = rssi
+    return rssi_list
 # TODO - END ------------------------------------------------------------------
 
 
@@ -24,6 +43,7 @@ NUM_BEACONS  = const(4)
 NUM_READINGS = const(NUM_BEACONS + 3)
 
 
+# Object to manage updated RSSI values from BLT sensors
 class blt_rssi_manager:
     def __init__(self):
         self.__rssi_list = [0, 0, 0, 0]
@@ -54,25 +74,6 @@ def get_measurements() -> list:
     z[NUM_BEACONS+1] = _wind_sensor()
     z[NUM_BEACONS+2] = _sail_sensor()
     return z
-
-
-def _get_updated_rssi_values() -> list:
-    ''' Read RSSI from pin until we get a new RSSI from all clients '''
-    rssi_list = [0]*NUM_BEACONS
-    # Keep reading RSSI values until we get a value from each client
-    while 0 in rssi_list:
-        serialized_rssi   = rssi_gen.get()  # TODO
-        cli_id, rssi      = _parse_serialized_rssi(serialized_rssi)
-        rssi_list[cli_id] = rssi
-    return rssi_list
-
-
-def _parse_serialized_rssi(serialized_rssi:int) -> int:
-    ''' Deserialized RSSI to original form '''
-    cli_id = serialized_rssi//1000
-    rssi   = serialized_rssi %1000  # Assumes positive, if negative, use -1000
-    # NOTE: May want rssi = -1*rssi depending on curve fit
-    return cli_id, rssi
 
 
 def _imu_gyro() -> float:
