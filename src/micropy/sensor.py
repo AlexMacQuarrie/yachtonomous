@@ -24,6 +24,20 @@ NUM_BEACONS  = const(4)
 NUM_READINGS = const(NUM_BEACONS + 3)
 
 
+class blt_rssi_manager:
+    def __init__(self):
+        self.__rssi_list = [0, 0, 0, 0]
+        
+    def update(self, new_rssi_list:list) -> None:
+        self.__rssi_list = new_rssi_list
+        
+    def get_list(self) -> None:
+        return self.__rssi_list
+        
+        
+rssi_manager = blt_rssi_manager()
+
+
 def estimate_initial_gamma(n_samples:int=5) -> float:
     ''' Estimate initial relative wind angle with average '''
     est_gamma = 0.0
@@ -35,7 +49,7 @@ def estimate_initial_gamma(n_samples:int=5) -> float:
 def get_measurements() -> list:
     ''' Get all sensor readings '''
     z = [0]*NUM_READINGS
-    z[:NUM_BEACONS]  = _get_updated_rssi_values()
+    z[:NUM_BEACONS]  = rssi_manager.get_list()
     z[NUM_BEACONS]   = _imu_gyro()
     z[NUM_BEACONS+1] = _wind_sensor()
     z[NUM_BEACONS+2] = _sail_sensor()

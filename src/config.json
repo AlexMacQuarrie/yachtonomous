@@ -20,7 +20,7 @@
     },
 
     "test": {
-        "T"                  : 0.02,
+        "T"                  : 0.025,
         "pool_size"          : [2.0, 2.0],
         "dest_pos"           : [1.65, 1.65],
         "exp_parms"          : [1.0, 1.0],
@@ -32,7 +32,7 @@
         "log_file_name"      : "results/boat_log.csv",
         "socket_timeout_s"   : 0.005,
         "wait_time_s"        : 0.005,
-        "measure_T"          : false
+        "measure_T"          : true
     },
 
     "noise": {

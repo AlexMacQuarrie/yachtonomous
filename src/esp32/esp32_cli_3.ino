@@ -15,7 +15,7 @@ const String cliID = "3";
 const String cliName = "ESP32C3_Client_3";
 
 // Timing consts
-const int delayMs = 5;
+const int delayMs = 2;
 
 // Declare pointers
 BLEClient* pClient;
