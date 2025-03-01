@@ -13,7 +13,7 @@ from tools import Angle
 
 '''
 TODO
-- Drivers (LEDs, IMU, ADC, Servos, Sail Sensor, Wind Sensor, Bluetooth)
+- Drivers (Servos, IMU, Sail Sensor, Wind Sensor, Bluetooth)
 - Update config values
 '''
 
@@ -127,7 +127,7 @@ def run() -> None:
             times[k] = T
 
     if test_config.measure_T:
-        print('Mean T =', np.mean(times))
+        print(f'Mean T = {np.mean(times)}, Median T = {np.median(times)}')
 
     # Close logger & end RPi program
     pico_socket.close()
