@@ -11,11 +11,6 @@ from boat_logging import boat_logger
 from pc_comms import udp_socket
 from tools import Angle
 
-'''
-TODO
-- Drivers (Servos, Wind sensor, Sail sensor, IMU)
-- Update config values
-'''
 
 def run() -> None:
     ''' Simulation Entrypoint '''
@@ -26,6 +21,9 @@ def run() -> None:
     sailboat    = boat(boat_config, control_config)
     logger      = boat_logger(test_config.log_en, test_config.log_file_name)
     pico_socket = udp_socket(test_config.log_en, test_config.socket_timeout_s)
+
+    # Set servos to initial desired state
+    pico_socket.send_actuator_inputs(control_config.init_inputs)
 
     # Create the feature map of distance beacons
     num_features = 4
@@ -129,7 +127,8 @@ def run() -> None:
     if test_config.measure_T:
         print(f'Mean T = {np.mean(times)}, Median T = {np.median(times)}')
 
-    # Close logger & end RPi program
+    # Set servos back to 0 degrees, close socket, close logger
+    pico_socket.send_actuator_inputs(control_config.init_inputs)
     pico_socket.close()
     logger.end()
 

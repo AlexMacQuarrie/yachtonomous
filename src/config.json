@@ -3,7 +3,7 @@
         "max_pred_horz"        : 25,
         "state_weights"        : [10.0, 10.0, 15.0, 0.0, 2.0, 1.0],
         "input_weights"        : [1.0, 5.0],
-        "input_saturation_deg" : [45, 45],
+        "input_saturation_deg" : [360, 360],
         "init_inputs_deg"      : [0, 0]
     },
 
@@ -36,8 +36,8 @@
     },
 
     "noise": {
-        "sensor_noise" : [0.1, 0.1, 0.1, 0.1],
-        "input_noise"  : [0.1, 0.1],
-        "state_noise"  : [0.75, 0.75, 1.5708, 1.5708, 0.7854, 0.7854]
+        "sensor_noise"     : [0.1, 0.1, 0.1, 0.1],
+        "input_noise_deg"  : [0.05, 0.05],
+        "state_noise"      : [0.75, 0.75, 1.5708, 1.5708, 0.7854, 0.7854]
     }
 }

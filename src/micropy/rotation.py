@@ -1,41 +1,73 @@
+# External
 from machine import Pin, time_pulse_us
+from micropython import const
 import time
+import math
 
-PWM_PIN = 11  # Change this to the actual pin you are using
-pwm_pin = Pin(PWM_PIN, Pin.IN)
 
-NUM_SAMPLES = 10  # Number of samples to average
+# Consts
+_SAIL_PIN        = const(14)
+_SAIL_OFFSET_DEG = const(0.0)
+_WIND_PIN        = const(12)
+_WIND_OFFSET_DEG = const(0.0)
+pi, tau          = math.pi, 2.0*math.pi
 
-while True:
-    total_high = 0
-    total_pwm = 0
 
-    for _ in range(NUM_SAMPLES):
-        # Measure HIGH time in microseconds
-        T_HIGH = time_pulse_us(pwm_pin, 1)
+def _wrap_to_pi(angle:float):
+    ''' Wrap angles to [-pi, pi] '''
+    return (angle + pi) % (tau) - pi
 
-        # Measure LOW time in microseconds
-        T_LOW = time_pulse_us(pwm_pin, 0)
 
-        # Total PWM period
-        T_PWM = T_HIGH + T_LOW
+class rotation_sensor:
+    def __init__(self, pin:int, offset_deg:float):
+        ''' Instantiate PWM pin and offset '''
+        self.__pwm_pin    = Pin(pin, Pin.IN)
+        self.__offset_rad = _wrap_to_pi(math.radians(offset_deg))
 
-        # Only add valid readings
-        if T_PWM > 0:
-            total_high += T_HIGH
-            total_pwm += T_PWM
+    def read_angle(self) -> float:
+        ''' Read angle from a rotation sensor PWM signal'''
+        # Time duty cycle
+        high_time  = time_pulse_us(self.__pwm_pin, 1)
+        low_time   = time_pulse_us(self.__pwm_pin, 0)
+        duty_cycle = high_time/(high_time+low_time)
 
-        time.sleep_ms(10)  # Short delay between samples to avoid flooding
+        # Convert to angle in radians
+        angle_rad = tau*duty_cycle
 
-    # Calculate the average angle
-    if total_pwm > 0:
-        avg_high = total_high / NUM_SAMPLES
-        avg_pwm = total_pwm / NUM_SAMPLES
-        angle = (avg_high / avg_pwm) * 360
-    else:
-        angle = 0
+        # Subtract offset and wrap
+        angle_rad = _wrap_to_pi(angle_rad-self.__offset_rad)
 
-    print("Angle:", angle)
+        return angle_rad
 
-    time.sleep_ms(10)  # Delay between batches of samples
 
+class rotation_sensors:
+    def __init__(self, sail_pin:int, sail_offset_deg:float, 
+                       wind_pin:int, wind_offset_deg:float):
+        ''' Instantiate roation sensor objects '''
+        self.__sail_sensor = rotation_sensor(pin=sail_pin, offset_deg=sail_offset_deg)
+        self.__wind_sensor = rotation_sensor(pin=wind_pin, offset_deg=wind_offset_deg)
+
+    def read_angles(self) -> float:
+        ''' Read wind and sail angles. Wind angle is relative to sail angle '''
+        sail_angle = self.__sail_sensor.read_angle()
+        wind_angle = _wrap_to_pi(self.__wind_sensor.read_angle()-sail_angle)
+        return sail_angle, wind_angle
+
+    def read_avg_angles(self, num_samples:int, delay_us:int) -> float:
+        ''' Get angles averages over a number of samples '''
+        sail_angle, wind_angle = 0, 0
+
+        for _ in range(num_samples):
+            new_sail_angle, new_wind_angle = self.read_angles()
+            sail_angle += new_sail_angle
+            wind_angle += new_wind_angle
+            time.sleep_us(delay_us)
+
+        sail_angle /= num_samples
+        wind_angle /= num_samples
+        return sail_angle, wind_angle
+    
+
+# Global object for sensors
+wind_and_sail_sensors = rotation_sensors(sail_pin=_SAIL_PIN, sail_offset_deg=_SAIL_OFFSET_DEG,
+                                         wind_pin=_WIND_PIN, wind_offset_deg=_WIND_OFFSET_DEG)

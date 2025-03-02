@@ -1,8 +1,17 @@
 # External
+from micropython import const
 import socket
 import network
 import time
 import json
+
+
+# Consts
+_SSID        = const('PicoW_Network')
+_PASSWORD    = const('micropython123')
+_UPD_PORT    = const(12345)
+_BUF_SIZE    = const(1024)
+_ACT_DELAY_S = const(0.1)
 
 
 class udp_socket:
@@ -10,17 +19,17 @@ class udp_socket:
         ''' Set up access point and UDP server '''
         # Set up Pico W as access point
         ap = network.WLAN(network.AP_IF)
-        ap.config(essid='PicoW_Network', password='micropython123')
+        ap.config(essid=_SSID, password=_PASSWORD)
         ap.active(True)
         while not ap.active():
-            time.sleep(0.1)
+            time.sleep(_ACT_DELAY_S)
 
         # Set up UDP server
         self.log_en         = log_en
-        self.buf_size       = 1024
+        self.buf_size       = _BUF_SIZE
         self.client_address = None   
         self.server_socket  = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.server_socket.bind((ap.ifconfig()[0], 12345))
+        self.server_socket.bind((ap.ifconfig()[0], _UPD_PORT))
         if self.log_en:
             print('Server setup complete')
 

@@ -5,14 +5,16 @@ from micropython import const
 # Internal
 from rpi_comms import udp_socket
 from sensor import estimate_initial_gamma, get_measurements, rssi_manager
-from actuator import actuate_servos
+from servo import actuate_servos
 
 
 # Consts
-NUM_BLINK    = const(5)
-BLINK_ITERS  = const(2*NUM_BLINK)
-BLINK_TIME_S = const(0.25)
-LOG_EN       = const(False)
+NUM_BLINK         = const(5)
+BLINK_ITERS       = const(2*NUM_BLINK)
+BLINK_TIME_S      = const(0.25)
+LOG_EN            = const(False)
+NUM_WIND_SAMPLES  = const(10)
+WIND_AVG_DELAY_US = const(1)
 
 
 def main() -> None:
@@ -31,7 +33,9 @@ def main() -> None:
         
         # Send data back or use actuator values      
         if   command == 'SEND_INIT_WIND':
-            pico_socket.send_init_gamma(estimate_initial_gamma())
+            initial_gamma = estimate_initial_gamma(num_samples = NUM_WIND_SAMPLES, 
+                                                   delay_us    = WIND_AVG_DELAY_US)
+            pico_socket.send_init_gamma(initial_gamma)
         elif command == 'SEND_DATA':
             pico_socket.send_sensor_readings(get_measurements())
         elif command == 'RECV_DATA':
