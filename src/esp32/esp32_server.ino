@@ -10,29 +10,31 @@
 // Timing consts
 const int delayMs = 5;
 
-StaticJsonDocument<200> doc;
-JsonArray arr;  // Declare the JSON array
-
 // Wifi config
-const char* ssid = "PicoW_Network";      // Replace with your Raspberry Pi Pico W SSID
-const char* password = "micropython123"; // Replace with your Raspberry Pi Pico W password
+const char* ssid = "PicoW_Network";       // Pico W SSID
+const char* password = "micropython123";  // Pico W password
 
-// UDP parameters
+// UDP config
 WiFiUDP udp;
-const char* udpAddress = "192.168.4.1";   // Raspberry Pi Pico W IP (replace with the correct IP)
-const int udpPort = 12345;                 // Port to send data on
+const char* udpAddress = "192.168.4.1";  // Pico W IP
+const int udpPort = 12345;               // Port to send data on
 
-// Declare pointers
+// Declare BLE pointers
 BLEServer* pServer;
 BLEService* pService;
 BLECharacteristic* pIntegerCharacteristic;
 BLEAdvertising* pAdvertising;
+
+// Global var for Json array of RSSI values
+StaticJsonDocument<200> doc;
+JsonArray arr;
 
 // Variables to track connected clients
 int clientCount = 0;
 
 void updateRSSIList(int newRSSI)
 {
+    // Deserialize the RSSI value from the client and insert into buffer
     int cli_id   = newRSSI / 1000;
     int rssi_val = newRSSI % 1000;
     arr[cli_id]  = rssi_val;
@@ -49,9 +51,8 @@ class MyCharacteristicCallbacks : public BLECharacteristicCallbacks
         Serial.print("Received Integer from client: ");
         Serial.println(receivedInteger);
 
-        // Update list of RSSI values for all clients
+        // Update buffer of RSSI values
         updateRSSIList(receivedInteger);
-
     }
 };
 
@@ -88,15 +89,17 @@ void setup()
     Serial.begin(115200);
     Serial.println("Server is starting...");
 
+    // Add initial 4 entries into the RSSI buffer
     arr = doc.createNestedArray("numbers");
     arr.add(0);
     arr.add(0);
     arr.add(0);
     arr.add(0);
 
+    // Initialize BLE server
     BLEDevice::init("ESP32C3_Server");
 
-    // Connect to Wi-Fi
+    // Connect to Pico W Wi-Fi
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
       delay(1000);
@@ -137,8 +140,8 @@ void setup()
 
 void loop() 
 {
-    StaticJsonDocument<200> doc;
     // Add key-value pairs to the JSON object
+    StaticJsonDocument<200> doc;
     doc["command"] = "ESP32";
     doc["number"] = arr;
 
@@ -146,7 +149,7 @@ void loop()
     String jsonMessage;
     serializeJson(doc, jsonMessage);
 
-    // Send the JSON message over UDP to the Raspberry Pi Pico W
+    // Send the JSON message over UDP to the Pico W
     udp.beginPacket(udpAddress, udpPort);
     udp.write(reinterpret_cast<const uint8_t*>(jsonMessage.c_str()), jsonMessage.length());
     udp.endPacket();

@@ -13,7 +13,7 @@ Faculty Supervisor:
 
 ## Structure
 - boat - Boat model (3D models)
-- hardware - Electronics (PCBs, etc.)
+- hardware - Electronics (PCBs)
 - src - Source code for the boat (Python, MicroPython, C++)
 - sim - Simulation code for the boat (Python)
 - docs - Project documentation (Text files for mermaid charts)
