@@ -10,12 +10,12 @@ _SAIL_PIN        = const(14)
 _SAIL_OFFSET_DEG = const(0.0)
 _WIND_PIN        = const(12)
 _WIND_OFFSET_DEG = const(0.0)
-pi, tau          = math.pi, 2.0*math.pi
+_PI, _TAU        = math.pi, 2.0*math.pi
 
 
 def _wrap_to_pi(angle:float):
     ''' Wrap angles to [-pi, pi] '''
-    return (angle + pi) % (tau) - pi
+    return (angle + _PI) % (_TAU) - _PI
 
 
 class rotation_sensor:
@@ -26,13 +26,17 @@ class rotation_sensor:
 
     def read_angle(self) -> float:
         ''' Read angle from a rotation sensor PWM signal'''
-        # Time duty cycle
+        # Time duty cycle twice to improve accuracy
         high_time  = time_pulse_us(self.__pwm_pin, 1)
         low_time   = time_pulse_us(self.__pwm_pin, 0)
-        duty_cycle = high_time/(high_time+low_time)
+        high_time += time_pulse_us(self.__pwm_pin, 1)
+        low_time  += time_pulse_us(self.__pwm_pin, 0)
+
+        # Calculate duty cycle using double high and low times
+        duty_cycle  = high_time/(high_time+low_time)
 
         # Convert to angle in radians
-        angle_rad = tau*duty_cycle
+        angle_rad = _TAU*duty_cycle
 
         # Subtract offset and wrap
         angle_rad = _wrap_to_pi(angle_rad-self.__offset_rad)
