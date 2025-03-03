@@ -5,14 +5,14 @@ from typing import Callable
 from tools import arr
     
 
-def range_sensor(x:arr, exp_parms:list, sigma_w:float, f_map:arr) -> arr:
+def range_sensor(x:arr, log_parms:list, sigma_w:float, f_map:arr) -> arr:
     ''' Exponential range sensor function '''
     # Compute the measured range to each feature from the current robot position
     num_features = f_map.shape[1]
     z = np.empty(num_features)
     for j in range(num_features):
         r     = get_distance(x, f_map, j)
-        z[j]  = exp_parms[0]*np.exp(-exp_parms[1]*r)
+        z[j]  = log_parms[0] + log_parms[1]*np.log(r)
         z[j] += sigma_w*np.random.randn()
     # Return the array of noisy measurements
     return z
@@ -37,12 +37,12 @@ def sail_sensor(x:arr, sigma_w:float) -> float:
     return x[5] + sigma_w*np.random.randn()
 
 
-def get_measurements(x:arr, x_hat:arr, u:arr, f:Callable, exp_parms:list, 
+def get_measurements(x:arr, x_hat:arr, u:arr, f:Callable, log_parms:list, 
                      sigma_w:float, f_map:arr, T:float) -> arr:
     ''' Get all sensor measurements '''
     num_features = f_map.shape[1]
     z = np.empty(num_features+3)
-    z[0:num_features] = range_sensor(x, exp_parms, sigma_w[0], f_map)   # x, y
+    z[0:num_features] = range_sensor(x, log_parms, sigma_w[0], f_map)   # x, y
     z[num_features]   = rotation_sensor(x_hat, sigma_w[1], f(x, u), T)  # theta
     z[num_features+1] = wind_sensor(x, sigma_w[2])                      # gamma
     z[num_features+2] = sail_sensor(x, sigma_w[3])                      # eta

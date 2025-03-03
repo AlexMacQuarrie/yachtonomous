@@ -18,7 +18,7 @@ class blt_rssi_manager:
     def update(self, new_rssi_list:list) -> None:
         self.__rssi_list = new_rssi_list
         
-    def get_list(self) -> None:
+    def get_list(self) -> list:
         return self.__rssi_list
         
 rssi_manager = blt_rssi_manager()

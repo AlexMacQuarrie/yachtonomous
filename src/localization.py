@@ -6,18 +6,18 @@ from boat_model import boat
 from tools import arr
 
 
-def range_sensor_func(x_hat:arr, exp_parms:list, f_map:arr) -> arr:
-    ''' Exponential range sensor function for EKF estimate '''
+def range_sensor_func(x_hat:arr, log_parms:list, f_map:arr) -> arr:
+    ''' Logarithmic range sensor function for EKF estimate '''
     # Compute the measured range to each feature from the current robot position
     num_features = f_map.shape[1]
     z, dists     = np.empty(num_features), np.empty(num_features)
     for j in range(num_features):
         dists[j] = np.sqrt((x_hat[0]-f_map[0, j])**2 + (x_hat[1]-f_map[1, j])**2)
-        z[j]     = exp_parms[0]*np.exp(-exp_parms[1]*dists[j])
+        z[j]     = log_parms[0] + log_parms[1]*np.log(dists[j])
     return z, dists
 
 
-def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr, 
+def ekf(sailboat:boat, log_parms:list, T:float, x_hat:arr, P:arr, 
         u:arr, z:arr, Q:arr, R:arr, f_map:arr) -> arr:
     ''' Extended Kalman Filter for localization '''
     # Compute the Jacobian matrices
@@ -31,13 +31,13 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
 
     # Linearize measurement model - Compute the Jacobian matrices
     num_features        = f_map.shape[1]
-    exp_measures, dists = range_sensor_func(x_hat, exp_parms, f_map)
+    log_measures, dists = range_sensor_func(x_hat, log_parms, f_map)
     H = np.zeros((num_features+3, sailboat.num_states))
     for j in range(num_features):
         H[j, :] = np.array(
             [
-                -exp_parms[1]*exp_measures[j]*(x_hat[0] - f_map[0, j])/dists[j],
-                -exp_parms[1]*exp_measures[j]*(x_hat[1] - f_map[1, j])/dists[j],
+                log_parms[1]*(x_hat[0] - f_map[0, j])/(dists[j]**2),
+                log_parms[1]*(x_hat[1] - f_map[1, j])/(dists[j]**2),
                 0,
                 0,
                 0,
@@ -54,7 +54,7 @@ def ekf(sailboat:boat, exp_parms:list, T:float, x_hat:arr, P:arr,
 
     # Compute a posteriori state estimate
     z_hat = np.zeros(num_features+3)
-    z_hat[0:num_features] = exp_measures  # x, y
+    z_hat[0:num_features] = log_measures  # x, y
     z_hat[num_features]   = x_new[2]      # theta
     z_hat[num_features+1] = x_new[3]      # gamma
     z_hat[num_features+2] = x_new[5]      # eta

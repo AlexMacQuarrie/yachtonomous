@@ -102,7 +102,7 @@ def run() -> None:
         z = pico_socket.get_measurements(x_hat[2], num_features, T)
 
         # Use the measurements to estimate the boat's state
-        x_hat, P_hat = ekf(sailboat, test_config.exp_parms, T, x_hat, P_hat, u, z, Q, R, f_map)
+        x_hat, P_hat = ekf(sailboat, test_config.log_parms, T, x_hat, P_hat, u, z, Q, R, f_map)
 
         # Feedback control (servo rates)
         u = mpc(sailboat, control_config, T, x_d[:, k:], x_hat)

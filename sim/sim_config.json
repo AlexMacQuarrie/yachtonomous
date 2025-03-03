@@ -1,30 +1,30 @@
 {
     "control": {
-        "max_pred_horz"        : 25,
-        "state_weights"        : [10.0, 10.0, 15.0, 0.0, 2.0, 1.0],
-        "input_weights"        : [1.0, 5.0],
-        "input_saturation_deg" : [45, 45],
-        "init_inputs_deg"      : [0, 0]
+        "max_pred_horz"    : 25,
+        "state_weights"    : [10.0, 10.0, 15.0, 0.0, 2.0, 1.0],
+        "input_weights"    : [1.0, 5.0],
+        "input_saturation" : [6.28319, 6.28319],
+        "init_inputs_deg"  : [0, 0]
     },
 
     "boat": {
-        "num_states_inputs"    : [6, 2],
-        "est_start_pos"        : [0.35, 0.35, null, null, 0.0, 0.0],
-        "gamma_coeffs"         : [-0.018072, 0.205949, 0.405128],
-        "length"               : 0.125,
-        "width"                : 0.22,
-        "crit_wind_angle_deg"  : 45,
-        "max_phi_deg"          : 45,
-        "max_eta_deg"          : 90,
-        "speed"                : 0.1
+        "num_states_inputs"   : [6, 2],
+        "est_start_pos"       : [0.35, 0.35, null, null, 0.0, 0.0],
+        "gamma_coeffs"        : [-0.018072, 0.205949, 0.405128],
+        "length"              : 0.125,
+        "width"               : 0.22,
+        "crit_wind_angle_deg" : 45,
+        "max_phi_deg"         : 55,
+        "max_eta_deg"         : 90,
+        "speed"               : 0.1
     },
 
     "test": {
-        "T"                  : 0.05,
+        "T"                  : 0.025,
         "abs_wind_angle_deg" : 60,
         "pool_size"          : [2.0, 2.0],
         "dest_pos"           : [1.65, 1.65],
-        "exp_parms"          : [1.0, 1.0],
+        "log_parms"          : [50.62094, 16.38157],
         "border_pad"         : 0.05,
         "dest_thresh"        : 1.0,
         "point_speed_factor" : 0.9,
@@ -32,9 +32,9 @@
     },
 
     "noise": {
-        "start_noise"  : [0.05, 0.05, 0.05, 0.0, 0.05, 0.05],
-        "sensor_noise" : [0.1, 0.1, 0.1, 0.1],
-        "input_noise"  : [0.1, 0.1],
-        "state_noise"  : [0.75, 0.75, 1.5708, 1.5708, 0.7854, 0.7854]
+        "start_noise"     : [0.05, 0.05, 0.05, 0.0, 0.05, 0.05],
+        "sensor_noise"    : [0.075, 0.1, 0.1, 0.1],
+        "input_noise_deg" : [0.05, 0.05],
+        "state_noise"     : [0.75, 0.75, 1.5708, 1.5708, 0.7854, 0.7854]
     }
 }

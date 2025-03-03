@@ -99,11 +99,11 @@ def simulate() -> None:
                           boat_config.max_eta)
 
         # Take measurements 
-        z = get_measurements(x[:, k], x_hat[:, k-1], u[:, k-1], sailboat.f, test_config.exp_parms, 
+        z = get_measurements(x[:, k], x_hat[:, k-1], u[:, k-1], sailboat.f, test_config.log_parms, 
                              noise_config.sensor_noise, f_map, test_config.T)
 
         # Use the measurements to estimate the robot's state
-        x_hat[:, k], P_hat[:, :, k] = ekf(sailboat, test_config.exp_parms, test_config.T, 
+        x_hat[:, k], P_hat[:, :, k] = ekf(sailboat, test_config.log_parms, test_config.T, 
                                           x_hat[:, k-1], P_hat[:, :, k-1], u[:, k-1], z, Q, R, f_map)
 
         # Feedback control (servo rates)
