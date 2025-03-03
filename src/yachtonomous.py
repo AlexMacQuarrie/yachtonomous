@@ -28,10 +28,10 @@ def run() -> None:
     # Create the feature map of distance beacons
     num_features = 4
     f_map        = np.zeros((2, num_features))
-    f_map[:, 0]  = (0.0                     , 0.0                     )
-    f_map[:, 1]  = (0.0                     , test_config.pool_size[1])
-    f_map[:, 2]  = (test_config.pool_size[0], 0.0                     )
-    f_map[:, 3]  = (test_config.pool_size[0], test_config.pool_size[1])
+    f_map[:, 0]  = (0.0                     , 0.0                     )  # CLI 0 (x,y)
+    f_map[:, 1]  = (0.0                     , test_config.pool_size[1])  # CLI 1 (x,y)
+    f_map[:, 2]  = (test_config.pool_size[0], 0.0                     )  # CLI 2 (x,y)
+    f_map[:, 3]  = (test_config.pool_size[0], test_config.pool_size[1])  # CLI 3 (x,y)
 
     # Sensor and process noise covariance matrices
     R = np.zeros((num_features+3, num_features+3))

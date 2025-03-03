@@ -14,7 +14,7 @@
         "length"               : 0.085,
         "width"                : 0.219,
         "crit_wind_angle_deg"  : 45,
-        "max_phi_deg"          : 45,
+        "max_phi_deg"          : 55,
         "max_eta_deg"          : 90,
         "speed"                : 0.1
     },

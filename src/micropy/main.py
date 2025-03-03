@@ -5,7 +5,7 @@ from micropython import const
 # Internal
 from rpi_comms import udp_socket
 from sensor import estimate_initial_gamma, get_measurements, rssi_manager
-from servo import actuate_servos
+from servo import sail_and_rudder_servos
 
 
 # Consts
@@ -39,7 +39,7 @@ def main() -> None:
         elif command == 'SEND_DATA':
             pico_socket.send_sensor_readings(get_measurements())
         elif command == 'RECV_DATA':
-            actuate_servos(request_json['eta'], request_json['phi'])
+            sail_and_rudder_servos.actuate_servos(request_json['eta'], request_json['phi'])
         elif command == 'ESP32':
             rssi_manager.update(request_json['number'])
         elif command == 'END_COMMS':
