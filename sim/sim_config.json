@@ -14,13 +14,13 @@
         "length"              : 0.125,
         "width"               : 0.22,
         "crit_wind_angle_deg" : 45,
-        "max_phi_deg"         : 55,
+        "max_phi_deg"         : 45,
         "max_eta_deg"         : 90,
         "speed"               : 0.1
     },
 
     "test": {
-        "T"                  : 0.025,
+        "T"                  : 0.03,
         "abs_wind_angle_deg" : 60,
         "pool_size"          : [2.0, 2.0],
         "dest_pos"           : [1.65, 1.65],

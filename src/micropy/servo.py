@@ -42,8 +42,8 @@ class servos:
 
     def actuate_servos(self, eta_rad:float, phi_rad:float) -> None:
         ''' Actuate both servos given desired angles '''
-        self.__sail_servo.set_angle(self.__sail_servo, eta_rad)
-        self.__rudder_servo.set_angle(self.__rudder_servo, phi_rad)
+        self.__sail_servo.set_angle(eta_rad)
+        self.__rudder_servo.set_angle(phi_rad)
 
 
 sail_and_rudder_servos = servos(rudder_pin=_RUDDER_PIN, sail_pin=_SAIL_PIN, pwm_freq=_PWM_FREQ)

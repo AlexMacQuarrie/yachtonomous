@@ -1,60 +1,55 @@
+# External
 from machine import Pin, I2C
-import time
+from micropython import const
+from struct import unpack
+import math
 
-# ICM-20948 I2C Address (default AD0 = HIGH)
-ICM20948_ADDR = 0x69  # Try 0x68 if needed
 
-# Important Register Addresses
-WHO_AM_I = 0x00       # WHO_AM_I register (should return 0xEA)
-PWR_MGMT_1 = 0x06     # Power management register
+# Consts
+_IMU_ADDR        = const(0x69)
+_IMU_FREQ        = const(100000)
+_SDA_PIN         = const(2)
+_SCL_PIN         = const(3)
+_I2C_BUS_ID      = const(1)
+_SIX_BYTES       = const(6)
+_SENSITIVITY_DPS = const(131)
+_HIGH            = const(0x01)
+_PWR_MGMT_1      = const(0x06)
+_GYRO_XOUT_H     = const(0x33)
+_GZ_OFFSET_RAD   = -0.0132  # Calibrated
 
-# Initialize I2C1 on GP2 (SDA) and GP3 (SCL)
-i2c = I2C(1, sda=Pin(2), scl=Pin(3), freq=100000)
 
-# 1. Scan for devices
-print("Scanning I2C bus...")
-devices = i2c.scan()
+class imu_i2c:
+    def __init__(self) -> None:
+        self.__i2c = I2C(_I2C_BUS_ID, sda=Pin(_SDA_PIN), scl=Pin(_SCL_PIN), freq=_IMU_FREQ)
+        self.__scan_i2c_bus()
+        self.__initialize_imu()
+        
+    def __scan_i2c_bus(self) -> None:
+        ''' Scan for I2C devices '''
+        if not self.__i2c.scan():
+            raise Exception('No I2C devices found')
 
-print(devices)
-if not devices:
-    print("No I2C devices found")
-else:
-    print(f"Found device(s): {[hex(d) for d in devices]}")
+    def __imu_write_register(self, reg:int, data:int) -> None:
+        ''' Write a byte to a register '''
+        self.__i2c.writeto(_IMU_ADDR, bytes([reg, data]))
+
+    def __imu_read_register(self, reg:int, length:int) -> int:
+        ''' Read bytes from a register '''
+        self.__i2c.writeto(_IMU_ADDR, bytes([reg]))
+        return self.__i2c.readfrom(_IMU_ADDR, length)
+
+    def __initialize_imu(self) -> None:
+        ''' Wake up and configure IMU '''
+        self.__imu_write_register(_PWR_MGMT_1, _HIGH)
+
+    def read_gyro_z_rps(self) -> float:
+        ''' Read Z-axis gyroscope data and convert to rad/s '''
+        raw_data = self.__imu_read_register(_GYRO_XOUT_H, _SIX_BYTES)
+        _, _, gz = unpack('>hhh', raw_data)
+        return math.radians(gz/_SENSITIVITY_DPS) - _GZ_OFFSET_RAD
+
+
+# Initialize IMU
+onboard_imu = imu_i2c()
     
-
-
-'''
-# 2. Check WHO_AM_I register
-try:
-    who_am_i = i2c.readfrom_mem(ICM20948_ADDR, WHO_AM_I, 1)
-    print(f"WHO_AM_I response: {hex(who_am_i[0])}")
-
-    if who_am_i[0] == 0xEA:
-        print("ICM-20948 detected and verified.")
-    else:
-        print(f"Unexpected WHO_AM_I response: {hex(who_am_i[0])}")
-
-except Exception as e:
-    print(f"Failed to read WHO_AM_I: {e}")
-
-# 3. Reset the ICM-20948
-try:
-    i2c.writeto_mem(ICM20948_ADDR, PWR_MGMT_1, b'\x80')  # Set reset bit
-    print("Sent reset command to ICM-20948. Waiting...")
-    time.sleep(0.1)  # Small delay for reset to complete
-
-    # Read WHO_AM_I again after reset
-    who_am_i = i2c.readfrom_mem(ICM20948_ADDR, WHO_AM_I, 1)
-    print(f"After reset, WHO_AM_I response: {hex(who_am_i[0])}")
-
-except Exception as e:
-    print(f"Error sending reset command: {e}")
-
-# 4. Wake up the sensor from sleep mode
-try:
-    i2c.writeto_mem(ICM20948_ADDR, PWR_MGMT_1, b'\x01')  # Clear sleep bit
-    print("Woke up ICM-20948 from sleep mode.")
-except Exception as e:
-    print(f"Error waking up sensor: {e}")
-'''
-

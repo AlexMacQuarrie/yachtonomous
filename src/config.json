@@ -14,13 +14,13 @@
         "length"              : 0.085,
         "width"               : 0.219,
         "crit_wind_angle_deg" : 45,
-        "max_phi_deg"         : 55,
+        "max_phi_deg"         : 45,
         "max_eta_deg"         : 90,
         "speed"               : 0.1
     },
 
     "test": {
-        "T"                  : 0.025,
+        "T"                  : 0.03,
         "pool_size"          : [2.0, 2.0],
         "dest_pos"           : [1.65, 1.65],
         "log_parms"          : [50.62094, 16.38157],
@@ -36,8 +36,8 @@
     },
 
     "noise": {
-        "sensor_noise"     : [0.075, 0.1, 0.2, 0.1],
-        "input_noise_deg"  : [0.05, 0.05],
-        "state_noise"      : [0.75, 0.75, 1.5708, 1.5708, 0.7854, 0.7854]
+        "sensor_noise"    : [0.075, 0.1, 0.2, 0.1],
+        "input_noise_deg" : [0.05, 0.05],
+        "state_noise"     : [0.75, 0.75, 1.5708, 1.5708, 0.7854, 0.7854]
     }
 }

@@ -2,6 +2,7 @@
 from micropython import const
 # Internal
 from rotation import wind_and_sail_sensors
+from imu import onboard_imu
 
 
 # Consts
@@ -36,14 +37,7 @@ def get_measurements() -> list:
 
     z = [0]*_NUM_READINGS
     z[:_NUM_BEACONS]  = rssi_manager.get_list()
-    z[_NUM_BEACONS]   = _imu_theta()
+    z[_NUM_BEACONS]   = onboard_imu.read_gyro_z_rps()
     z[_NUM_BEACONS+1] = wind_angle
     z[_NUM_BEACONS+2] = sail_angle
     return z
-
-
-# TODO
-def _imu_theta() -> float:
-    ''' Read theta_dot from IMU '''
-    return 0.1
-
