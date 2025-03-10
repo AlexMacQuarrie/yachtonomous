@@ -1,0 +1,50 @@
+%% Yachtonomous sequence diagram
+
+sequenceDiagram
+    participant Main
+    participant Config
+    participant Navigation
+    participant Sensors
+    participant EKF
+    participant MPC
+    participant Actuators
+
+    Main ->> Config: Parse JSON config
+    Config ->> Config: Parse JSON
+    Config ->> Main: Parsed objects
+    Main ->> Main: Instatiate boat model
+    Main ->> Main: Estimate initial state
+
+    Main ->> Navigation: Plot course
+    alt Desintation is Upwind
+        loop Until near Desintation
+            Navigation ->> Navigation: Plot course in straight<br/>line until tack condition
+        end
+    else Not Upwind
+        loop Until near Desintation
+            Navigation ->> Navigation: Plot course in straight line
+        end
+    end
+    Navigation ->> Main: Desired state
+
+    loop for all points in desired state
+        Main ->> Sensors: Get readings
+        Sensors ->> Sensors: Sample
+        Sensors ->> Main: Return readings
+        Main ->> EKF: Estimate state
+        EKF ->> EKF: A priori estimate
+        EKF ->> EKF: Linearize measurement model
+        EKF ->> EKF: Compute kalman gain
+        EKF ->> EKF: A posteriori estimate
+        EKF ->> Main: New state estimate
+        Main ->> MPC: Calculate new inputs
+        MPC ->> MPC: Compute linearizations over prediction horizon
+        MPC ->> MPC: Compute optimal inputs
+        MPC ->> Main: New inputs
+        Main ->> Actuators: Send inputs
+        Actuators ->> Actuators: Actuate
+        Actuators ->> Main: Return
+    end
+
+    Main ->> Main: Generate output plots
+    

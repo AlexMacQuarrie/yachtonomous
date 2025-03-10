@@ -20,7 +20,7 @@ def range_sensor(x:arr, log_parms:list, sigma_w:float, f_map:arr) -> arr:
 
 def rotation_sensor(x_hat:arr, sigma_w:float, f:arr, T:float) -> float:
     ''' Simulate IMU angle measurement using integration '''
-    return x_hat[2] + (f[2]+sigma_w*np.random.randn())*T
+    return x_hat[2] + f[2]*T + sigma_w*np.random.randn()
 
 
 def wind_sensor(x:arr, sigma_w:float):

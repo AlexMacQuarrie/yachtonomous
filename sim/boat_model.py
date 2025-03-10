@@ -13,7 +13,7 @@ def integrate_inputs(prev:arr, rate:arr, T:float,
                      max_eta:float, max_phi:float,
                      sigma_w:list) -> arr:
     ''' Integrate rate inputs to actual servo angle inputs, including noise '''
-    u_act = prev + (rate+sigma_w*np.random.randn())*T
+    u_act = prev + rate*T + sigma_w*np.random.randn()
     u_act[0] = np.clip(u_act[0], -max_eta, max_eta)
     u_act[1] = np.clip(u_act[1], -max_phi, max_phi)
     return u_act

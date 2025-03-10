@@ -36,13 +36,24 @@ def parse_csv() -> None:
 
     plt.rc('savefig', format='pdf')
     plt.rc('savefig', bbox='tight')
-    fig2 = plt.figure(2)
-    fig2.set_figheight(10.0)
-    ylabels_states = ['x [m]', 'y [m]', '\u03B8 [deg]', 
-                      '\u03B3 [deg]', '\u03C6 [deg]', '\u03B7 [deg]']
-    ylabels_inputs = ['\u03C3 [deg/s]', '\u03C9 [deg/s]']
+
+    ylabels_states = ['x [m]', 
+                      'y [m]', 
+                      '\u03B8 [deg]',    # theta
+                      '\u03B3 [deg]',    # gamma
+                      '\u03C6 [deg]',    # phi
+                      '\u03B7 [deg]']    # eta
+    ylabels_inputs = ['\u03C3 [deg/s]',  # sigma
+                      '\u03C9 [deg/s]']  # omega
+    
+    idx_map = {1 : 1, 2 : 3, 3 : 5, 4 : 7, 5 : 2, 6 : 4, 7 : 6, 8 : 8}
+    
+    fig1 = plt.figure(1)
+    fig1.set_figheight(8.0)
+    fig1.set_figwidth(10.0)
+
     for i in range(num_states):
-        ax2 = plt.subplot(int(str(num_states+num_inputs)+'1'+str(i+1)))
+        ax2 = plt.subplot(4, 2, idx_map[i+1])  # 4 rows, 2 columns, index i + 1
         if i == 4:  # Phi
             plt.plot(t, x[i, :]  *180.0/np.pi, 'C0'  , label='Estimated')
             plt.plot(t, u_a[1, :]*180.0/np.pi, 'C1--', label='Input')
@@ -60,11 +71,14 @@ def parse_csv() -> None:
             plt.plot(t   , x_d[i, :], 'C2--', label='Desired')
         plt.grid(color='0.95')
         plt.ylabel(ylabels_states[i])
-        plt.setp(ax2, xticklabels=[])
         if i == 0:
             plt.legend()
+        if i == 3:
+            plt.xlabel('t [s]')
+        else:
+            plt.setp(ax2, xticklabels=[])
     for i in range(num_inputs):
-        ax2 = plt.subplot(int(str(num_states+num_inputs)+'1'+str(num_states+i+1)))
+        ax2 = plt.subplot(4, 2, idx_map[num_states+i+1])  # 4 rows, 2 columns, index after state plots
         if 'deg' in ylabels_inputs[i]:
             plt.step(t, u[i, :]*180.0/np.pi , 'C0'  , label='Estimated')
             plt.plot(t, np.zeros(u.shape[1]), 'C2--', label='Desired')
