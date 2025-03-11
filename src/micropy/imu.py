@@ -1,4 +1,3 @@
-# External
 from machine import Pin, I2C
 from micropython import const
 from struct import unpack
@@ -30,11 +29,11 @@ class imu_i2c:
         if not self.__i2c.scan():
             raise Exception('No I2C devices found')
 
-    def __imu_write_register(self, reg:int, data:int) -> None:
+    def __imu_write_register(self, reg, data) -> None:
         ''' Write a byte to a register '''
         self.__i2c.writeto(_IMU_ADDR, bytes([reg, data]))
 
-    def __imu_read_register(self, reg:int, length:int) -> int:
+    def __imu_read_register(self, reg, length) -> int:
         ''' Read bytes from a register '''
         self.__i2c.writeto(_IMU_ADDR, bytes([reg]))
         return self.__i2c.readfrom(_IMU_ADDR, length)

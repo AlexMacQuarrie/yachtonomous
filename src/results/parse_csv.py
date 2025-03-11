@@ -60,7 +60,7 @@ def parse_csv() -> None:
             plt.plot(t, x_d[i, :]*180.0/np.pi, 'C2--', label='Desired')
         elif i == 5:  # Eta
             plt.plot(t, x[i, :]  *180.0/np.pi, 'C0'  , label='Estimated')
-            plt.plot(t, u_a[0, :]*180.0/np.pi, 'C1--', label='Inpit')
+            plt.plot(t, u_a[0, :]*180.0/np.pi, 'C1--', label='Input')
             plt.plot(t, x_d[i, :]*180.0/np.pi, 'C2--', label='Desired')
         elif 'deg' in ylabels_states[i]:
             plt.plot(t, x[i, :]  *180.0/np.pi, 'C0'  , label='Estimated')

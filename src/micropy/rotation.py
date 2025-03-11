@@ -7,9 +7,9 @@ import math
 
 # Consts
 _SAIL_PIN        = const(14)
-_SAIL_OFFSET_DEG = const(0.0)
+_SAIL_OFFSET_DEG = const(112.3717)
 _WIND_PIN        = const(12)
-_WIND_OFFSET_DEG = const(0.0)
+_WIND_OFFSET_DEG = const(2.617762)
 _PI, _TAU        = math.pi, 2.0*math.pi
 
 
