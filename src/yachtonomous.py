@@ -89,6 +89,7 @@ def run() -> None:
 
     # Set initial T
     T = test_config.T
+    runtime = 0
     if test_config.measure_T:
         times    = np.zeros(x_d.shape[1])
         times[0] = test_config.T
@@ -114,7 +115,8 @@ def run() -> None:
         pico_socket.send_actuator_inputs(u_act)
 
         # Log results for debug
-        logger.log_results(x_hat, x_d[:, k], u, u_act, k*T)
+        runtime += T
+        logger.log_results(x_hat, x_d[:, k], u, u_act, runtime)
 
         # Wait to not overwhelm server
         time.sleep(test_config.wait_time_s)
