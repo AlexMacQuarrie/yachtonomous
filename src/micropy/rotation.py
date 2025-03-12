@@ -6,10 +6,10 @@ import math
 
 
 # Consts
-_SAIL_PIN        = const(14)
-_SAIL_OFFSET_DEG = const(112.3717)
-_WIND_PIN        = const(12)
-_WIND_OFFSET_DEG = const(2.617762)
+_SAIL_PIN        = const(12)
+_WIND_PIN        = const(14)
+_SAIL_OFFSET_DEG = 16.27156
+_WIND_OFFSET_DEG = 129.4828
 _PI, _TAU        = math.pi, 2.0*math.pi
 
 
@@ -26,9 +26,19 @@ class rotation_sensor:
 
     def read_angle(self) -> float:
         ''' Read angle from a rotation sensor PWM signal'''
-        # Time duty cycle twice to improve accuracy
+        # Time duty cycle 5x to improve accuracy
         high_time  = time_pulse_us(self.__pwm_pin, 1)
         low_time   = time_pulse_us(self.__pwm_pin, 0)
+        
+        high_time += time_pulse_us(self.__pwm_pin, 1)
+        low_time  += time_pulse_us(self.__pwm_pin, 0)
+        
+        high_time += time_pulse_us(self.__pwm_pin, 1)
+        low_time  += time_pulse_us(self.__pwm_pin, 0)
+        
+        high_time += time_pulse_us(self.__pwm_pin, 1)
+        low_time  += time_pulse_us(self.__pwm_pin, 0)
+        
         high_time += time_pulse_us(self.__pwm_pin, 1)
         low_time  += time_pulse_us(self.__pwm_pin, 0)
 
@@ -54,7 +64,7 @@ class rotation_sensors:
     def read_angles(self) -> float:
         ''' Read wind and sail angles. Wind angle is relative to sail angle '''
         sail_angle = self.__sail_sensor.read_angle()
-        wind_angle = _wrap_to_pi(self.__wind_sensor.read_angle()-sail_angle)
+        wind_angle = _wrap_to_pi(self.__wind_sensor.read_angle()+sail_angle)
         return sail_angle, wind_angle
 
     def read_avg_angles(self, num_samples:int, delay_us:int) -> float:

@@ -15,7 +15,7 @@ _SENSITIVITY_DPS = const(131)
 _HIGH            = const(0x01)
 _PWR_MGMT_1      = const(0x06)
 _GYRO_XOUT_H     = const(0x33)
-_GZ_OFFSET_RAD   = -0.0132  # Calibrated
+_GZ_OFFSET_RAD   = -0.01082335  # Calibrated
 
 
 class imu_i2c:
