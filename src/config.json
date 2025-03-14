@@ -9,8 +9,8 @@
 
     "boat": {
         "num_states_inputs"   : [6, 2],
-        "est_start_pos"       : [0.35, 0.35, null, 0.0, 0.0, 0.0],
-        "gamma_coeffs"        : [-0.018072, 0.205949, 0.405128],
+        "est_start_pos"       : [0.25, 0.25, null, 0.0, 0.0, 0.0],
+        "gamma_coeffs"        : [-0.0243435, 0.257715, 0.32331],
         "length"              : 0.127,
         "width"               : 0.219,
         "crit_wind_angle_deg" : 45,
@@ -21,8 +21,8 @@
 
     "test": {
         "T"                  : 0.03,
-        "pool_size"          : [2.0, 2.0],
-        "dest_pos"           : [1.65, 1.65],
+        "pool_size"          : [1.60, 1.60],
+        "dest_pos"           : [1.35, 1.35],
         "log_parms"          : [50.62094, 16.38157],
         "border_pad"         : 0.05,
         "dest_thresh"        : 1.0,
@@ -32,11 +32,11 @@
         "log_file_name"      : "results/boat_log.csv",
         "socket_timeout_s"   : 0.005,
         "wait_time_s"        : 0.005,
-        "measure_T"          : true
+        "measure_T"          : false
     },
 
     "noise": {
-        "sensor_noise"    : [0.075, 0.1, 0.35, 0.15],
+        "sensor_noise"    : [0.08, 0.10, 0.30, 0.15],
         "input_noise_deg" : [0.05, 0.05],
         "state_noise"     : [0.75, 0.75, 1.5708, 1.5708, 0.7854, 0.7854]
     }
