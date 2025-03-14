@@ -8,8 +8,8 @@ import math
 # Consts
 _SAIL_PIN        = const(12)
 _WIND_PIN        = const(14)
-_SAIL_OFFSET_DEG = 16.27156
-_WIND_OFFSET_DEG = 129.4828
+_SAIL_OFFSET_DEG = 16.27156  # Calibrated
+_WIND_OFFSET_DEG = 129.4828  # Calibrated
 _PI, _TAU        = math.pi, 2.0*math.pi
 
 
